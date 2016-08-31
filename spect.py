@@ -37,14 +37,29 @@ def parseFile(lines):
 
 def buildHTML(f, s):
     h = os.path.join(mddir, s, f)
+    htm = ''
     with open(h, mode='r', encoding='utf-8') as z:
         text = z.read()
         lines = text.splitlines()
     k, text = parseFile(lines)
-    print(k)
-    print(markdown.markdown(text, extensions=['smarty']))
+    # print(k)
+    # print(markdown.markdown(text, extensions=['smarty']))
+    htm += header(**k)
+    htm += '<body>\n'
+    htm += markdown.markdown(text, extensions=['smarty'])
+    return htm
 
 
+def header(**kwargs):
+    htm = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n'
+    htm += '<meta http-equiv="x-ua-compatible" content="ie=edge">\n'
+    htm += '<meta name="viewport" content="width=device-width,'
+    htm += 'initial-scale=1">\n<title>'
+    htm += kwargs['title']
+    htm += '</title>\n<link rel="stylesheet" href="..\styles\styles.css">\n'
+    htm += '<meta name="generator" content="Spect">\n'
+    htm += '</head>\n'
+    return htm
 
 localdir = r'C:\Users\gerhardj\Dropbox\__websites\python\testsite'
 mddir = os.path.join(localdir, 'md')
@@ -55,4 +70,5 @@ secs = get_immediate_subdirectories(mddir)
 for s in secs:
     files = get_jfiles(s)
     for f in files:
-        buildHTML(f, s)
+        x = buildHTML(f, s)
+        print(x)
