@@ -4,7 +4,6 @@ Created on Wed Aug 31 10:15:38 2016
 
 @author: gerhardj
 """
-# test
 
 import markdown
 import os
@@ -22,10 +21,18 @@ def get_jfiles(x):
             if name[-1:] == 'j']
 
 
-def parseFile(l):
-    if l[0:2] == '$$':
-        v, z = l.split(":")
-        return v[2:], z
+def parseFile(lines):
+    kwargs = {}
+    text = []
+    for l in lines:
+        if l[0:2] == '$$':
+            y, z = l.split(":")
+            v = y[2:]
+            kwargs[v] = z
+        else:
+            text.append(l)
+    md = '\n'.join(text)
+    return kwargs, md
 
 
 def buildHTML(f, s):
@@ -33,10 +40,11 @@ def buildHTML(f, s):
     with open(h, mode='r', encoding='utf-8') as z:
         text = z.read()
         lines = text.splitlines()
-        for l in lines:
-            if not l == '':
-                print(parseFile(l))
-      
+    k, text = parseFile(lines)
+    print(k)
+    print(markdown.markdown(text, extensions=['smarty']))
+
+
 
 localdir = r'C:\Users\gerhardj\Dropbox\__websites\python\testsite'
 mddir = os.path.join(localdir, 'md')
@@ -48,4 +56,3 @@ for s in secs:
     files = get_jfiles(s)
     for f in files:
         buildHTML(f, s)
-    
