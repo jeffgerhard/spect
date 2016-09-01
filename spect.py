@@ -49,7 +49,7 @@ def buildHTML(f, s):
     htm += header(**k)
     htm += '<body>\n'
     htm += markdown.markdown(text, extensions=['smarty'])
-    htm += '</body></html>
+    htm += '</body></html>'
     return htm
 
 
@@ -63,12 +63,12 @@ def header(**kwargs):
     htm += 'initial-scale=1">\n'
     htm += '\t<title>'
     if kwargs['title']:
-        htm += kwargs['title'] + ' : '
+        htm += kwargs['title']
     if kwargs['section']:
-        htm += kwargs[section']
+        htm += ' : ' + kwargs['section']
     else:
-        htm += 'jeffgerhard.com'
-    htm += '</title>\n
+        htm += '&mdash; jeffgerhard.com'
+    htm += '</title>\n'
     htm += '\t<link rel="stylesheet" href="..\styles\styles.css">\n'
     htm += '\t<meta name="generator" content="spect https://github.com/jeffgerhard/spect">\n'
     htm += '</head>\n'
