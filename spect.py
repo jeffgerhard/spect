@@ -1,8 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Aug 31 10:15:38 2016
+Created August-September 2016
+@author: github.com/jeffgerhard or @jeffgerhard
 
-@author: gerhardj
+spect is a static site generator customized to my own needs, in active development.
+
+development phase 1: just generate some html files in a directory structure
+of index.html files
+
+phase 2: generate tags pages and similar (like related content);
+    generate rss feed and sitemap; allow local persistent settings for
+    multiple instances
+
+phase 3: configure an auto-upload to server
+
+phase 4: a separate script to easily generate the .md files including
+    dates, sections, etc.
+
+phase 5: think about .htaccess and redirects
+
 """
 
 import markdown as m
@@ -26,20 +42,34 @@ def buildHTML(f, s):
     htm = ''
     with open(h, mode='r', encoding='utf-8') as z:
         t = z.read()
-#    k, text = parseFile(lines)
     text = md.convert(t)
     k = md.Meta
     if s == 'blog':
         k['section'] = [blogtitle]
     else:
         k['section'] = [s]
-    print(k)
-    # print(markdown.markdown(text, extensions=['smarty']))
+    # print(k)
     htm += head(**k)
     htm += '<body>\n'
     htm += header(**k)
-    htm += md.convert(text)
-    htm += '</body></html>'
+    htm += sidebar(**k)
+    htm += '\t<main>\n'
+    htm += '\t\t<header>\n'
+    htm += '\t\t\t<h1>'
+    if 'title' in k:
+        htm += str(k['title'][0])
+    htm += '</h1>\n'
+    if 'summary' in k:
+        htm += '\t\t\t<p class ="summary">' + str(k['summary'][0]) + '</p>\n'
+    htm += '\t\t</header>\n'
+    htm += '\n\n'
+    gist = md.convert(text)
+    g = gist.splitlines(keepends=True)
+    for a in g:
+        htm += '\t' + a
+    htm += '\n\n\t</main>\n'
+    htm += '</body>\n'
+    htm += '</html>'
     return htm
 
 
@@ -72,8 +102,16 @@ def head(**kwargs):
     return htm
 
 def header(**kwargs):
-    htm = '<header>\n'
-    htm += '\t'
+    htm = '\t<header>\n'
+    htm += '\t\t[ok so think about including a header nav bar that scrolls mostly offscreen like i did for that finding aid project?]\n'
+    htm += '\t\t[also can customize per section?]\n'
+    htm += '\t</header>\n'
+    return htm
+    
+def sidebar(**kwargs):
+    htm = '\t<aside>\n'
+    htm += '\t\t[here i can put my sidebar]\n'
+    htm += '\t</aside>\n'
     return htm
 
 md = m.Markdown(extensions=['meta', 'smarty'])
