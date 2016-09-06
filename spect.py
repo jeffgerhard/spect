@@ -6,7 +6,7 @@ Created August-September 2016
 spect is a static site generator customized to my own needs, in active development.
 
 development phase 1: just generate some html files in a directory structure
-of index.html files
+of index.html files // mostly done but i want to add date functionality
 
 phase 2: generate tags pages and similar (like related content);
     generate rss feed and sitemap; allow local persistent settings for
@@ -15,14 +15,18 @@ phase 2: generate tags pages and similar (like related content);
 phase 3: configure an auto-upload to server
 
 phase 4: a separate script to easily generate the .md files including
-    dates, sections, etc.
+    dates, sections, etc. NB this part can include publication date issues
 
 phase 5: think about .htaccess and redirects
+
+uses markdown and python-slugify https://github.com/un33k/python-slugify
 
 """
 
 import markdown as m
 import os
+from slugify import slugify
+from dateutil.parser import parse
 
 
 def get_immediate_subdirectories(a_dir):
@@ -37,9 +41,8 @@ def get_mdfiles(x):
             if name[-2:] == 'md']
 
 
-def buildHTML(f, s):
+def keywords(f, s):
     h = os.path.join(mddir, s, f)
-    htm = ''
     with open(h, mode='r', encoding='utf-8') as z:
         t = z.read()
     text = md.convert(t)
@@ -48,12 +51,26 @@ def buildHTML(f, s):
         k['section'] = [blogtitle]
     else:
         k['section'] = [s]
-    # print(k)
-    htm += head(**k)
+    if 'date' in k:
+        d = parse(k['date'][0])
+        k['slug'] = [str(d.date()) + '_']
+    else:
+        k['slug'] = ['']
+    if 'title' in k:
+        k['slug'][0] += slugify(k['title'][0], max_length=20,
+              word_boundary=True, stopwords=['the', 'a', 'an'])
+    else:
+        k['slug'][0] += 'untitled'
+    return text, k
+
+
+def buildHTML(text, **k):
+    htm = head(**k)
     htm += '<body>\n'
     htm += header(**k)
     htm += sidebar(**k)
-    htm += '\t<main>\n'
+    htm += '\t<main>\n'  #  would be good to also split out this main stuff
+    #                       so could have like blog() or other variations
     htm += '\t\t<header>\n'
     htm += '\t\t\t<h1>'
     if 'title' in k:
@@ -66,8 +83,13 @@ def buildHTML(f, s):
     gist = md.convert(text)
     g = gist.splitlines(keepends=True)
     for a in g:
-        htm += '\t' + a
-    htm += '\n\n\t</main>\n'
+        if not a == '\n':
+            htm += '\t' + a
+    htm += '\n\n\n\t\t<footer>\n'
+    htm += '\t\t\t<p>This could be where i add date posted and tags, prev/next links, etc</p>\n'
+    htm += '\t\t</footer>\n'
+    htm += '\t</main>\n'
+    htm += footer(**k)
     htm += '</body>\n'
     htm += '</html>'
     return htm
@@ -85,7 +107,7 @@ def head(**kwargs):
     if 'title' in kwargs:
         htm += str(kwargs['title'][0])
     if 'section' in kwargs:
-        htm += ' : ' + kwargs['section'][0]
+        htm += ' :: ' + kwargs['section'][0]
     else:
         htm += '&mdash; jeffgerhard.com'
     htm += '</title>\n'
@@ -94,12 +116,13 @@ def head(**kwargs):
         for s in kwargs['styles']:
             stz.append(s)
     for st in stz:
-        htm += '\t<link rel="stylesheet" href="../styles/'
+        htm += '\t<link rel="stylesheet" href="../../styles/'
         htm += st
         htm += '.css">\n'
     htm += '\t<meta name="generator" content="https://github.com/jeffgerhard/spect">\n'
     htm += '</head>\n'
     return htm
+
 
 def header(**kwargs):
     htm = '\t<header>\n'
@@ -107,25 +130,44 @@ def header(**kwargs):
     htm += '\t\t[also can customize per section?]\n'
     htm += '\t</header>\n'
     return htm
-    
+
+
+def footer(**kwargs):
+    htm = '\t<footer>\n'
+    htm += '\t\t<p>Some misc about links can go down here i guess.</p>\n'
+    htm += '\t</footer>\n'
+    return htm
+
+
 def sidebar(**kwargs):
     htm = '\t<aside>\n'
     htm += '\t\t[here i can put my sidebar]\n'
     htm += '\t</aside>\n'
     return htm
 
+
 md = m.Markdown(extensions=['meta', 'smarty'])
 # think about how to make the local md files add to the extension list
 
-# localdir = r'C:\Users\gerhardj\Dropbox\__websites\python\testsite'
-localdir = r'C:\Users\J\Dropbox\__websites\python\testsite'
+localdir = r'C:\Users\gerhardj\Dropbox\__websites\python\testsite'
+# localdir = r'C:\Users\J\Dropbox\__websites\python\testsite'
 mddir = os.path.join(localdir, 'md')
 wdir = os.path.join(localdir, 'www')
 blogtitle = 'introspect'
 secs = get_immediate_subdirectories(mddir)
-
+internalsitemap = os.path.join(localdir, 'site.txt')
+with open(internalsitemap, 'w') as fh:
+    fh.write('')  # will this delete contents?
 for s in secs:
     files = get_mdfiles(s)
     for f in files:
-        x = buildHTML(f, s)
-        print(x)
+        text, k = keywords(f, s)
+        htm = buildHTML(text, **k)
+        pagedir = os.path.join(wdir, s, k['slug'][0])
+        if not os.path.exists(pagedir):
+            os.makedirs(pagedir)
+        htmlfile = os.path.join(pagedir, 'index.html')
+        with open(htmlfile, 'w') as fh:
+            fh.write(htm)
+        with open(internalsitemap, 'a') as fh:
+            fh.write('../../' + s + '/' + k['slug'][0] + '/\n')
