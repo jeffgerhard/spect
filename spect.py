@@ -35,6 +35,14 @@ def get_immediate_subdirectories(a_dir):
             if os.path.isdir(os.path.join(a_dir, name))]
 
 
+def yyyy_mm_dd(**k):
+    if 'date' in k:
+        d = parse(k['date'][0])
+        return str(d.date())
+    else:
+        return ''
+
+
 def get_mdfiles(x):
     a_dir = os.path.join(mddir, x)
     return [name for name in os.listdir(a_dir)
@@ -51,11 +59,7 @@ def keywords(f, s):
         k['section'] = [blogtitle]
     else:
         k['section'] = [s]
-    if 'date' in k:
-        d = parse(k['date'][0])
-        k['slug'] = [str(d.date()) + '_']
-    else:
-        k['slug'] = ['']
+    k['slug'] = [yyyy_mm_dd(**k) + '_']
     if 'title' in k:
         k['slug'][0] += slugify(k['title'][0], max_length=20,
               word_boundary=True, stopwords=['the', 'a', 'an'])
@@ -149,8 +153,8 @@ def sidebar(**kwargs):
 md = m.Markdown(extensions=['meta', 'smarty'])
 # think about how to make the local md files add to the extension list
 
-localdir = r'C:\Users\gerhardj\Dropbox\__websites\python\testsite'
-# localdir = r'C:\Users\J\Dropbox\__websites\python\testsite'
+# localdir = r'C:\Users\gerhardj\Dropbox\__websites\python\testsite'
+localdir = r'C:\Users\J\Dropbox\__websites\python\testsite'
 mddir = os.path.join(localdir, 'md')
 wdir = os.path.join(localdir, 'www')
 blogtitle = 'introspect'
@@ -170,4 +174,7 @@ for s in secs:
         with open(htmlfile, 'w') as fh:
             fh.write(htm)
         with open(internalsitemap, 'a') as fh:
-            fh.write('../../' + s + '/' + k['slug'][0] + '/\n')
+            # fh.write('../../' + s + '/' + k['slug'][0] + '/\n')
+            fh.write(yyyy_mm_dd(**k) + ',')
+            fh.write(k['title'][0] + ',')
+            fh.write(s + '/' + k['slug'][0] + '\n')
