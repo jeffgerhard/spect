@@ -6,11 +6,11 @@ Created August-September 2016
 spect is a static site generator customized to my own needs, in active development.
 
 development phase 1: just generate some html files in a directory structure
-of index.html files // mostly done but i want to add date functionality
+of index.html files
 
 phase 2: generate tags pages and similar (like related content);
     generate rss feed and sitemap; allow local persistent settings for
-    multiple instances
+    multiple instances. note that i need to do the tags, etc first!
 
 phase 3: configure an auto-upload to server
 
@@ -73,25 +73,29 @@ def buildHTML(text, **k):
     htm += '<body>\n'
     htm += header(**k)
     htm += sidebar(**k)
-    htm += '\t<main>\n'  #  would be good to also split out this main stuff
+    htm += '\t<main class="container">\n'  #  would be good to also split out this main stuff
     #                       so could have like blog() or other variations
+    htm += '\t\t<article>\n'
     htm += '\t\t<header>\n'
     htm += '\t\t\t<h1>'
     if 'title' in k:
         htm += str(k['title'][0])
     htm += '</h1>\n'
     if 'summary' in k:
-        htm += '\t\t\t<p class ="summary">' + str(k['summary'][0]) + '</p>\n'
+        htm += '\t\t\t<p class="summary">' + str(k['summary'][0]) + '</p>\n'
     htm += '\t\t</header>\n'
+    htm += '\t\t<div class="eight columns">\n'
     htm += '\n\n'
     gist = md.convert(text)
     g = gist.splitlines(keepends=True)
     for a in g:
         if not a == '\n':
             htm += '\t' + a
-    htm += '\n\n\n\t\t<footer>\n'
+    htm += '\t\t</div>\n'
+    htm += '\n\n\n\t\t<footer class="three columns">\n'
     htm += '\t\t\t<p>This could be where i add date posted and tags, prev/next links, etc</p>\n'
     htm += '\t\t</footer>\n'
+    htm += '\t\t</article>\n'
     htm += '\t</main>\n'
     htm += footer(**k)
     htm += '</body>\n'
@@ -101,7 +105,7 @@ def buildHTML(text, **k):
 
 def head(**kwargs):
     htm = '<!DOCTYPE html>\n'
-    htm += '<html>\n'
+    htm += '<html lang="en">\n'
     htm += '<head>\n'
     htm += '\t<meta charset="utf-8">\n'
     htm += '\t<meta http-equiv="x-ua-compatible" content="ie=edge">\n'
@@ -115,7 +119,9 @@ def head(**kwargs):
     else:
         htm += '&mdash; jeffgerhard.com'
     htm += '</title>\n'
-    stz = ['styles']
+    htm += '\t<link href="//fonts.googleapis.com/css?family=Alegreya+Sans|Raleway:400,300,600" '
+    htm += 'rel="stylesheet" type="text/css">\n'
+    stz = ['normalize','skeleton']
     if 'styles' in kwargs:
         for s in kwargs['styles']:
             stz.append(s)
@@ -123,6 +129,7 @@ def head(**kwargs):
         htm += '\t<link rel="stylesheet" href="../../styles/'
         htm += st
         htm += '.css">\n'
+    htm += '\t<link rel="icon" type="image/png" href="../../favicon.png">'
     htm += '\t<meta name="generator" content="https://github.com/jeffgerhard/spect">\n'
     htm += '</head>\n'
     return htm
