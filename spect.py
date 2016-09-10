@@ -6,18 +6,21 @@ Created August-September 2016
 spect is a static site generator customized to my own needs, in active development.
 
 development phase 1: just generate some html files in a directory structure
-of index.html files
+of index.html files 
+
+NEED TO DELETE OBSOLETE LOCAL FILES!
+And maybe backup last saved files before screwing around
 
 phase 2: generate tags pages and similar (like related content);
     generate rss feed and sitemap; allow local persistent settings for
     multiple instances. note that i need to do the tags, etc first!
 
-phase 3: configure an auto-upload to server
+phase 3: configure an auto-upload to server [coming along nicely]
 
 phase 4: a separate script to easily generate the .md files including
     dates, sections, etc. NB this part can include publication date issues
 
-phase 5: think about .htaccess and redirects
+phase 5: think about .htaccess and redirects; also 404s and all that
 
 uses markdown and python-slugify https://github.com/un33k/python-slugify
 
@@ -27,6 +30,7 @@ import markdown as m
 import os
 from slugify import slugify
 from dateutil.parser import parse
+from spect_config import j
 
 
 def get_immediate_subdirectories(a_dir):
@@ -42,6 +46,10 @@ def yyyy_mm_dd(**k):
     else:
         return ''
 
+def cleanDate(**k):
+    if 'date' in k:
+        d = parse(k['date'][0])
+        return '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
 
 def get_mdfiles(x):
     a_dir = os.path.join(mddir, x)
@@ -61,28 +69,31 @@ def keywords(f, s):
         k['section'] = [s]
     k['slug'] = [yyyy_mm_dd(**k) + '_']
     if 'title' in k:
-        k['slug'][0] += slugify(k['title'][0], max_length=20,
-              word_boundary=True, stopwords=['the', 'a', 'an'])
+        k['slug'][0] += slugify(
+            k['title'][0], max_length=28,
+            word_boundary=True, stopwords=['the', 'a', 'an']
+            )
     else:
         k['slug'][0] += 'untitled'
+        k['title'][0] = 'untitled'  # later, grab file name as title
     return text, k
 
 
 def buildHTML(text, **k):
     htm = head(**k)
-    htm += '<body>\n'
+    htm += '<body>'
     htm += header(**k)
-    htm += sidebar(**k)
-    htm += '\t<main class="container">\n'  #  would be good to also split out this main stuff
-    #                       so could have like blog() or other variations
-    htm += '\t\t<article>\n'
-    htm += '\t\t<header>\n'
-    htm += '\t\t\t<h1>'
-    if 'title' in k:
-        htm += str(k['title'][0])
-    htm += '</h1>\n'
+    htm += '''
+    <main class="container"> <!-- would be good to also split out this <main>
+                    stuff so could have like blog() or other variations -->
+        <article>
+            <header>
+                <h1>{}</h1>
+'''.format(k['title'][0])
     if 'summary' in k:
         htm += '\t\t\t<p class="summary">' + str(k['summary'][0]) + '</p>\n'
+    if 'date' in k:
+        htm += cleanDate(**k)
     htm += '\t\t</header>\n'
     htm += '\t\t<div class="eight columns">\n'
     htm += '\n\n'
@@ -97,6 +108,7 @@ def buildHTML(text, **k):
     htm += '\t\t</footer>\n'
     htm += '\t\t</article>\n'
     htm += '\t</main>\n'
+    htm += sidebar(**k)
     htm += footer(**k)
     htm += '</body>\n'
     htm += '</html>'
@@ -104,67 +116,83 @@ def buildHTML(text, **k):
 
 
 def head(**kwargs):
-    htm = '<!DOCTYPE html>\n'
-    htm += '<html lang="en">\n'
-    htm += '<head>\n'
-    htm += '\t<meta charset="utf-8">\n'
-    htm += '\t<meta http-equiv="x-ua-compatible" content="ie=edge">\n'
-    htm += '\t<meta name="viewport" content="width=device-width,'
-    htm += 'initial-scale=1">\n'
-    htm += '\t<title>'
+    htm = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>'''
     if 'title' in kwargs:
         htm += str(kwargs['title'][0])
     if 'section' in kwargs:
         htm += ' :: ' + kwargs['section'][0]
     else:
         htm += '&mdash; jeffgerhard.com'
-    htm += '</title>\n'
-    htm += '\t<link href="//fonts.googleapis.com/css?family=Alegreya+Sans|Raleway:400,300,600" '
-    htm += 'rel="stylesheet" type="text/css">\n'
-    stz = ['normalize','skeleton']
+    htm += '</title>'
+    htm += '''
+    <link rel="stylesheet" type="text/css"
+    href="//fonts.googleapis.com/css?family=Alegreya+Sans|Raleway">'''
+    stz = ['normalize', 'skeleton']
     if 'styles' in kwargs:
         for s in kwargs['styles']:
             stz.append(s)
     for st in stz:
-        htm += '\t<link rel="stylesheet" href="../../styles/'
-        htm += st
-        htm += '.css">\n'
-    htm += '\t<link rel="icon" type="image/png" href="../../favicon.png">'
-    htm += '\t<meta name="generator" content="https://github.com/jeffgerhard/spect">\n'
-    htm += '</head>\n'
+        htm += '''
+    <link rel="stylesheet" href="../../styles/{}.css">'''.format(st)
+    htm += '''
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <meta name="generator" content="https://github.com/jeffgerhard/spect">
+</head>
+'''
     return htm
 
 
 def header(**kwargs):
-    htm = '\t<header>\n'
-    htm += '\t\t[ok so think about including a header nav bar that scrolls mostly offscreen like i did for that finding aid project?]\n'
-    htm += '\t\t[also can customize per section?]\n'
-    htm += '\t</header>\n'
+    htm = '''
+    <header id="topbar">
+        <p>Name of website I guess! A 'home' link can be at the left
+        and be persistent/sticky, then most of the rest can scroll up
+        and offscreen</p>
+        <div class="container">
+            <nav>
+                <a href="//">PROJECTS</a>
+            </nav>
+            <nav>
+                <a href="//">BLOG</a>
+            </nav>
+            <nav>
+                <a href="//">MUSIC</a>
+            </nav>
+        </div>
+    </header>
+'''
     return htm
 
 
 def footer(**kwargs):
-    htm = '\t<footer>\n'
-    htm += '\t\t<p>Some misc about links can go down here i guess.</p>\n'
-    htm += '\t</footer>\n'
+    htm = '''
+    <footer>
+        <p>Some misc about links can go down here i guess.</p>
+    </footer>
+'''
     return htm
 
 
 def sidebar(**kwargs):
-    htm = '\t<aside>\n'
-    htm += '\t\t[here i can put my sidebar]\n'
-    htm += '\t</aside>\n'
+    htm = '''
+    <aside>
+        [here i can put my sidebar]
+    </aside>
+'''
     return htm
-
 
 md = m.Markdown(extensions=['meta', 'smarty'])
 # think about how to make the local md files add to the extension list
-
-# localdir = r'C:\Users\gerhardj\Dropbox\__websites\python\testsite'
-localdir = r'C:\Users\J\Dropbox\__websites\python\testsite'
+localdir = j['localdir']
 mddir = os.path.join(localdir, 'md')
 wdir = os.path.join(localdir, 'www')
-blogtitle = 'introspect'
+blogtitle = j['blogtitle']
 secs = get_immediate_subdirectories(mddir)
 internalsitemap = os.path.join(localdir, 'site.txt')
 with open(internalsitemap, 'w') as fh:
