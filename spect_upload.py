@@ -31,41 +31,12 @@ def upload_files(host, user, passwd, hkeys, local, remote):
         # WinSCP returns 0 for success, so upload failed
         raise UploadFailed
 
-#userDir = os.path.expanduser('~')
-#spectDir = os.path.join(userDir, '.spect')
-#config = os.path.join(spectDir, 'config.ini')
-#
-#if not checkConfigFile():
-#    configurations = {}
-#    print('going through first run setup..../n/n')
-#    blogtitle = input("ok what is your blog's name? ")
-#    site = input('web host site? ')
-#    sitefolder = input('folder on site to use? (include the public_html) ')
-#    username = input('remote host username? ')
-#    password = input('remote host password? ')
-#    hostkeys = input('scary hostkeys string that you barely understand? ')
-#    winscp = askopenfilename('find the winscp.com file! ')
-#    localdir = askdirectory(title='Choose a local directory with the file \
-#                        root, like "website" with a "md" directory inside ')
-#    for i in ('blogtitle', 'username', 'site', 'password', 'hostkeys',
-#              'sitefolder', 'localdir'):
-#        configurations[i] = locals()[i]
-##    configurations['username'] = username
-#    with open(config, 'w', encoding='utf-8') as fh:
-#        fh.write(json.dumps(configurations, indent=4, sort_keys=True))
-
-#with open(config, 'r', encoding='utf-8') as fh:
-#    data = fh.read()
-#
-#j = json.loads(data)
-
-# what about this method http://stackoverflow.com/a/33420817
+# basically stealing this method http://stackoverflow.com/a/33420817
 
 
 localdir = j['localdir']
 mddir = os.path.join(localdir, 'md')
 wdir = os.path.join(localdir, 'www')
 WINSCP = j['winscp']
-#
 upload_files(j['site'], j['username'], j['password'], j['hostkeys'],
              wdir, j['sitefolder'])
