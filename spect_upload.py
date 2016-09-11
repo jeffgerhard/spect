@@ -5,7 +5,7 @@ Created on Sat Sep 10 14:57:38 2016
 @author: jcg
 """
 
-#import os
+import os
 #import json
 #from tkinter.filedialog import askdirectory, askopenfilename
 from subprocess import Popen, PIPE

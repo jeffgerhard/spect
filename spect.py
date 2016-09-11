@@ -71,7 +71,7 @@ def keywords(f, s):
     if 'title' in k:
         k['slug'][0] += slugify(
             k['title'][0], max_length=28,
-            word_boundary=True, stopwords=['the', 'a', 'an']
+            stopwords=['the', 'a', 'an']
             )
     else:
         k['slug'][0] += 'untitled'
