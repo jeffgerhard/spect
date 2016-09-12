@@ -11,13 +11,25 @@ of index.html files
 NEED TO DELETE OBSOLETE LOCAL FILES!
 And maybe backup last saved files before screwing around
 
+also i need to clean up the configuration of the styles and sections;
+    probably the config setup should be like
+    enter named comma-separated sections; like "blog, projects, about"
+    and then prompt to answer those questions
+    
+also also i need to consider the organization of the .md files. i think 
+    including 'section' should override folder structure. so could just have
+    a single .md folder if a user wanted that
+
 phase 2: generate tags pages and similar (like related content);
-    generate rss feed and sitemap; allow local persistent settings for
-    multiple instances. note that i need to do the tags, etc first!
+    generate rss feed and sitemap; note that i need to generate tags 
+    pages before the .html pages
 
 phase 3: configure an auto-upload to server [coming along nicely]
+    incorporate some kind of spellcheck and can stash a user dictionary
+    on the server. see https://pythonhosted.org/pyenchant/tutorial.html
+    make it easy to edit the config file or reset it
 
-phase 4: a separate script to easily generate the .md files including
+phase 4: a separate script to easily generate new .md files including
     dates, sections, etc. NB this part can include publication date issues
 
 phase 5: think about .htaccess and redirects; also 404s and all that
@@ -91,27 +103,38 @@ def buildHTML(text, **k):
                 <h1>{}</h1>
 '''.format(k['title'][0])
     if 'summary' in k:
-        htm += '\t\t\t<p class="summary">' + str(k['summary'][0]) + '</p>\n'
+        htm += '''
+                <p class="summary">{}</p>
+'''.format(str(k['summary'][0]))
     if 'date' in k:
-        htm += cleanDate(**k)
-    htm += '\t\t</header>\n'
-    htm += '\t\t<div class="eight columns">\n'
-    htm += '\n\n'
+        htm += '''
+               <p class="date">{}</p>
+'''.format(cleanDate(**k))
+    htm += '''
+            </header>
+            <div class="eight columns">
+
+'''
     gist = md.convert(text)
     g = gist.splitlines(keepends=True)
     for a in g:
         if not a == '\n':
             htm += '\t' + a
-    htm += '\t\t</div>\n'
-    htm += '\n\n\n\t\t<footer class="three columns">\n'
-    htm += '\t\t\t<p>This could be where i add date posted and tags, prev/next links, etc</p>\n'
-    htm += '\t\t</footer>\n'
-    htm += '\t\t</article>\n'
-    htm += '\t</main>\n'
+    htm += '''
+
+
+            </div>
+        <footer class="three columns">
+            <p>This could be where i add date posted and tags, 
+            prev/next links, etc</p>
+        </footer>
+        </article>
+    </main>
+'''
     htm += sidebar(**k)
     htm += footer(**k)
-    htm += '</body>\n'
-    htm += '</html>'
+    htm += '''</body>
+</html>'''
     return htm
 
 
@@ -130,9 +153,16 @@ def head(**kwargs):
     else:
         htm += '&mdash; jeffgerhard.com'
     htm += '</title>'
+    scz = ['scripts']
+    if 'scripts' in kwargs:
+        for s in kwargs['scripts']:
+            scz.append(s)
+    for sc in scz:
+        htm += '''
+    <script source="../../scripts/{}.js"></script>'''.format(sc)
     htm += '''
-    <link rel="stylesheet" type="text/css"
-    href="//fonts.googleapis.com/css?family=Alegreya+Sans|Raleway">'''
+    <link rel="stylesheet" href=
+    "//fonts.googleapis.com/css?family=Bitter|Iceland|Source+Sans+Pro">'''
     stz = ['normalize', 'skeleton']
     if 'styles' in kwargs:
         for s in kwargs['styles']:
@@ -141,7 +171,7 @@ def head(**kwargs):
         htm += '''
     <link rel="stylesheet" href="../../styles/{}.css">'''.format(st)
     htm += '''
-    <link rel="icon" type="image/png" href="../../favicon.png">
+    <link rel="icon" type="image/x-icon" href="../../favicon.ico">
     <meta name="generator" content="https://github.com/jeffgerhard/spect">
 </head>
 '''
@@ -151,9 +181,9 @@ def head(**kwargs):
 def header(**kwargs):
     htm = '''
     <header id="topbar">
-        <p>Name of website I guess! A 'home' link can be at the left
-        and be persistent/sticky, then most of the rest can scroll up
-        and offscreen</p>
+        <h1>'''
+    htm += k['section'][0]  # give this some thought
+    htm +='''</h1>        
         <div class="container">
             <nav>
                 <a href="//">PROJECTS</a>
