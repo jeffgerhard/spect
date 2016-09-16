@@ -12,9 +12,13 @@ NEED TO DELETE OBSOLETE LOCAL FILES!
 And maybe backup last saved files before screwing around
 
 also i need to clean up the configuration of the styles and sections;
-    probably the config setup should be like
-    enter named comma-separated sections; like "blog, projects, about"
-    and then prompt to answer those questions
+    also i need to think about generated pages like front of blog,
+    and what wordpress considers 'pages'
+    
+    md files can be like type: page with default to be blog-type
+    
+    maybe can be a config structure (that would allow multiple 'blogs') like:
+     { 'blogs' : ['introspect' : 'blog', 'harmonies' : 'harmonies']
     
 also also i need to consider the organization of the .md files. i think 
     including 'section' should override folder structure. so could just have
@@ -34,7 +38,7 @@ phase 4: a separate script to easily generate new .md files including
 
 phase 5: think about .htaccess and redirects; also 404s and all that
 
-uses markdown and python-slugify https://github.com/un33k/python-slugify
+consider implementing comments. see https://github.com/jimpick/lambda-comments
 
 """
 
@@ -58,10 +62,12 @@ def yyyy_mm_dd(**k):
     else:
         return ''
 
+
 def cleanDate(**k):
     if 'date' in k:
         d = parse(k['date'][0])
         return '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
+
 
 def get_mdfiles(x):
     a_dir = os.path.join(mddir, x)
@@ -125,7 +131,7 @@ def buildHTML(text, **k):
 
             </div>
         <footer class="three columns">
-            <p>This could be where i add date posted and tags, 
+            <p>This could be where i add date posted and tags,
             prev/next links, etc</p>
         </footer>
         </article>
