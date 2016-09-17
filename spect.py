@@ -8,9 +8,6 @@ spect is a static site generator customized to my own needs, in active developme
 development phase 1: just generate some html files in a directory structure
 of index.html files 
 
-NEED TO DELETE OBSOLETE LOCAL FILES!
-And maybe backup last saved files before screwing around
-
 also i need to clean up the configuration of the styles and sections;
     also i need to think about generated pages like front of blog,
     and what wordpress considers 'pages'
@@ -18,7 +15,7 @@ also i need to clean up the configuration of the styles and sections;
     md files can be like type: page with default to be blog-type
     
     maybe can be a config structure (that would allow multiple 'blogs') like:
-     { 'blogs' : ['introspect' : 'blog', 'harmonies' : 'harmonies']
+     { 'blogs' : ['introspect' : 'blog', 'harmonies' : 'harmonies'] }
     
 also also i need to consider the organization of the .md files. i think 
     including 'section' should override folder structure. so could just have
@@ -47,7 +44,8 @@ import os
 from slugify import slugify
 from dateutil.parser import parse
 from spect_config import j
-
+import shutil
+import filecmp
 
 def get_immediate_subdirectories(a_dir):
 # stackoverflow.com/questions/800197/how-to-get-all-of-the-immediate-subdirectories-in-python#800201
@@ -69,10 +67,11 @@ def cleanDate(**k):
         return '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
 
 
-def get_mdfiles(x):
+def get_files(x, ext):
     a_dir = os.path.join(mddir, x)
+    y = -(len(ext))
     return [name for name in os.listdir(a_dir)
-            if name[-2:] == 'md']
+            if name[y:] == ext]
 
 
 def keywords(f, s):
@@ -229,19 +228,28 @@ localdir = j['localdir']
 mddir = os.path.join(localdir, 'md')
 wdir = os.path.join(localdir, 'www')
 blogtitle = j['blogtitle']
+# first i will do backups of all the wdir files
+secs = get_immediate_subdirectories(wdir)
+for s in secs:
+    subsecs = get_immediate_subdirectories(os.path.join(wdir, s))
+    for sub in subsecs:
+        ind = os.path.join(wdir, s, sub, 'index.html')
+        bup = os.path.join(wdir, s, sub, 'index.bak')
+        shutil.copy2(ind, bup)
+# then will create spect files
 secs = get_immediate_subdirectories(mddir)
 internalsitemap = os.path.join(localdir, 'site.txt')
 with open(internalsitemap, 'w') as fh:
     fh.write('')  # will this delete contents?
 for s in secs:
-    files = get_mdfiles(s)
+    files = get_files(s, 'md')
     for f in files:
         text, k = keywords(f, s)
         htm = buildHTML(text, **k)
         pagedir = os.path.join(wdir, s, k['slug'][0])
         if not os.path.exists(pagedir):
             os.makedirs(pagedir)
-        htmlfile = os.path.join(pagedir, 'index.html')
+        htmlfile = os.path.join(pagedir, 'index.spect')
         with open(htmlfile, 'w') as fh:
             fh.write(htm)
         with open(internalsitemap, 'a') as fh:
@@ -249,3 +257,23 @@ for s in secs:
             fh.write(yyyy_mm_dd(**k) + ',')
             fh.write(k['title'][0] + ',')
             fh.write(s + '/' + k['slug'][0] + '\n')
+# then i want to run thru and compare 'n' delete files
+secs = get_immediate_subdirectories(wdir)
+for s in secs:
+    subsecs = get_immediate_subdirectories(os.path.join(wdir, s))
+    for sub in subsecs:
+        ind = os.path.join(wdir, s, sub, 'index.html')
+        bup = os.path.join(wdir, s, sub, 'index.bak')
+        spct = os.path.join(wdir, s, sub, 'index.spect')
+        if os.path.exists(ind):
+            # compare files and delete one
+            if os.path.exists(spct):
+                if filecmp.cmp(ind, spct):
+                    os.remove(spct)
+                else:
+                    os.remove(ind)
+                    os.rename(spct, ind)
+            else:  # no .spect file so delete this whole dir
+                shutil.rmtree(os.path.join(wdir, s, sub))
+        else:  # no index file so just use the spct
+            os.rename(spct, ind)
