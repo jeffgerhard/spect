@@ -67,8 +67,8 @@ def cleanDate(**k):
         return '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
 
 
-def get_files(x, ext):
-    a_dir = os.path.join(mddir, x)
+def get_files(ext, path, directory):
+    a_dir = os.path.join(path, directory)
     y = -(len(ext))
     return [name for name in os.listdir(a_dir)
             if name[y:] == ext]
@@ -88,7 +88,7 @@ def keywords(f, s):
     if 'title' in k:
         k['slug'][0] += slugify(
             k['title'][0], max_length=28,
-            stopwords=['the', 'a', 'an']
+            stopwords=['the', 'a', 'an'], word_boundary=True, save_order=True
             )
     else:
         k['slug'][0] += 'untitled'
@@ -222,27 +222,72 @@ def sidebar(**kwargs):
 '''
     return htm
 
+
+def buildTagPage(f, l):
+    k['title'] = ['[' + f[:-4].upper() + '] tag']
+    k['section'] = ['site tags']
+    htm = head(**k)
+    print(htm)
+    # ok this is getting somewhere and is basically the same way i can
+    # build the front blog pages, etc.
+
 md = m.Markdown(extensions=['meta', 'smarty'])
 # think about how to make the local md files add to the extension list
 localdir = j['localdir']
 mddir = os.path.join(localdir, 'md')
 wdir = os.path.join(localdir, 'www')
+admindir = os.path.join(localdir, 'admin')
+tagdir = os.path.join(admindir, 'tags')
 blogtitle = j['blogtitle']
 # first i will do backups of all the wdir files
-secs = get_immediate_subdirectories(wdir)
-for s in secs:
-    subsecs = get_immediate_subdirectories(os.path.join(wdir, s))
-    for sub in subsecs:
-        ind = os.path.join(wdir, s, sub, 'index.html')
-        bup = os.path.join(wdir, s, sub, 'index.bak')
-        shutil.copy2(ind, bup)
+# update - jk don't really need to do that!
+#secs = get_immediate_subdirectories(wdir)
+#for s in secs:
+#    subsecs = get_immediate_subdirectories(os.path.join(wdir, s))
+#    for sub in subsecs:
+#        ind = os.path.join(wdir, s, sub, 'index.html')
+#        bup = os.path.join(wdir, s, sub, 'index.bak')
+#        shutil.copy2(ind, bup)
 # then will create spect files
 secs = get_immediate_subdirectories(mddir)
-internalsitemap = os.path.join(localdir, 'site.txt')
+internalsitemap = os.path.join(admindir, 'site.txt')
+######################################################
+# clean up some directories and files before starting;
+# should really make sure to build basic directories too!
+######################################################
 with open(internalsitemap, 'w') as fh:
-    fh.write('')  # will this delete contents?
+    fh.write('')  # clear contents of sitemap file
+if os.path.exists(tagdir):
+    shutil.rmtree(tagdir)
+os.makedirs(tagdir)
+
+# let's try to grab tags for now; later dates? etc?
+
 for s in secs:
-    files = get_files(s, 'md')
+    files = get_files('md', mddir, s)
+    for f in files:
+        text, k = keywords(f, s)
+        if 'tags' in k:
+            tags = k['tags']
+            for t in tags:
+                tagfile = os.path.join(admindir, 'tags', t + '.tmp')
+                with open(tagfile, 'a') as fh:  
+                    fh.write(k['title'][0] + ',')
+                    fh.write(s + '/' + k['slug'][0] + '\n')
+files = get_files('tmp', admindir, 'tags')
+for f in files:
+    fn = os.path.join(tagdir, f)
+    with open(fn, 'r') as fh:
+        lines = fh.read()
+        l = lines.splitlines()
+        l.sort()
+        buildTagPage(f, l)
+
+#################################################################
+# here is the main routine to build html files
+#################################################################
+for s in secs:
+    files = get_files('md', mddir, s)
     for f in files:
         text, k = keywords(f, s)
         htm = buildHTML(text, **k)
@@ -263,7 +308,7 @@ for s in secs:
     subsecs = get_immediate_subdirectories(os.path.join(wdir, s))
     for sub in subsecs:
         ind = os.path.join(wdir, s, sub, 'index.html')
-        bup = os.path.join(wdir, s, sub, 'index.bak')
+        # bup = os.path.join(wdir, s, sub, 'index.bak')
         spct = os.path.join(wdir, s, sub, 'index.spect')
         if os.path.exists(ind):
             # compare files and delete one
