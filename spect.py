@@ -224,10 +224,32 @@ def sidebar(**kwargs):
 
 
 def buildTagPage(f, l):
-    k['title'] = ['[' + f[:-4].upper() + '] tag']
+    k['title'] = ['[' + f[:-4].upper() + ']']
     k['section'] = ['site tags']
     htm = head(**k)
-    print(htm)
+    htm += '''<body>
+'''
+    htm += header(**k)
+    htm +='''    <main class="container">
+    <h1>[{}]</h1>'''.format(f[:-4].upper())
+    l.sort(reverse=True)
+    for line in l:
+        items = line.split(',')
+        postdate = items[0]
+        urlseg = items[2]
+        posttitle = items[1]
+        htm +='''
+        <section class="post_link">
+            <h2><a href="../../{}">{}</a></h2>
+            <p class="date">{}</p>
+        </section>'''.format(urlseg, posttitle, postdate)
+    htm +='''
+    </main>
+<!-- i guess i should add a footer too -->
+</body>
+</html>    
+    '''
+    return htm
     # ok this is getting somewhere and is basically the same way i can
     # build the front blog pages, etc.
 
@@ -238,6 +260,7 @@ mddir = os.path.join(localdir, 'md')
 wdir = os.path.join(localdir, 'www')
 admindir = os.path.join(localdir, 'admin')
 tagdir = os.path.join(admindir, 'tags')
+tagwebdir = os.path.join(wdir, 'tags')
 blogtitle = j['blogtitle']
 # first i will do backups of all the wdir files
 # update - jk don't really need to do that!
@@ -259,8 +282,10 @@ with open(internalsitemap, 'w') as fh:
     fh.write('')  # clear contents of sitemap file
 if os.path.exists(tagdir):
     shutil.rmtree(tagdir)
+if os.path.exists(tagwebdir):
+    shutil.rmtree(tagwebdir)
 os.makedirs(tagdir)
-
+os.makedirs(tagwebdir)
 # let's try to grab tags for now; later dates? etc?
 
 for s in secs:
@@ -272,17 +297,26 @@ for s in secs:
             for t in tags:
                 tagfile = os.path.join(admindir, 'tags', t + '.tmp')
                 with open(tagfile, 'a') as fh:  
+                    fh.write(yyyy_mm_dd(**k) + ',')
                     fh.write(k['title'][0] + ',')
                     fh.write(s + '/' + k['slug'][0] + '\n')
+                    # need to do this with csv plugin to deal with commas in titles!!!!
+                    # or maybe json or whatever other format
 files = get_files('tmp', admindir, 'tags')
+taghtmls = {}
 for f in files:
     fn = os.path.join(tagdir, f)
     with open(fn, 'r') as fh:
         lines = fh.read()
         l = lines.splitlines()
         l.sort()
-        buildTagPage(f, l)
-
+        taghtmls[f[:-4]] = buildTagPage(f, l)
+for t in taghtmls:
+    thtmlpath = os.path.join(tagwebdir,slugify(t))
+    os.makedirs(thtmlpath, exist_ok=True)
+    tagfile = os.path.join(thtmlpath,'index.spect')
+    with open(tagfile, 'w') as fh:
+        fh.write(taghtmls[t])
 #################################################################
 # here is the main routine to build html files
 #################################################################
