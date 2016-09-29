@@ -14,9 +14,6 @@ also i need to clean up the configuration of the styles and sections;
     
     md files can be like type: page with default to be blog-type
     
-    maybe can be a config structure (that would allow multiple 'blogs') like:
-     { 'blogs' : ['introspect' : 'blog', 'harmonies' : 'harmonies'] }
-    
 also also i need to consider the organization of the .md files. i think 
     including 'section' should override folder structure. so could just have
     a single .md folder if a user wanted that
@@ -46,6 +43,7 @@ from dateutil.parser import parse
 from spect_config import j
 import shutil
 import filecmp
+import csv
 
 def get_immediate_subdirectories(a_dir):
 # stackoverflow.com/questions/800197/how-to-get-all-of-the-immediate-subdirectories-in-python#800201
@@ -101,8 +99,7 @@ def buildHTML(text, **k):
     htm += '<body>'
     htm += header(**k)
     htm += '''
-    <main class="container"> <!-- would be good to also split out this <main>
-                    stuff so could have like blog() or other variations -->
+    <main class="container">
         <article>
             <header>
                 <h1>{}</h1>
@@ -130,8 +127,19 @@ def buildHTML(text, **k):
 
             </div>
         <footer class="three columns">
-            <p>This could be where i add date posted and tags,
-            prev/next links, etc</p>
+            <p>Please comment over on Twitter, where this post was highlighted
+            <a href="//">here</a>.</p>
+            '''
+    if 'tags' in k:
+        htm += '''<p><i>Tagged as:</i></p>
+            <ul>'''
+        for tag in k['tags']:
+            taglink = '../../tags/' + slugify(tag)
+            htm += '''
+                <li><a href="{}" style="taglink">{}</a></li>'''.format(taglink, tag)
+        htm += '''
+            </ul>'''
+    htm +='''
         </footer>
         </article>
     </main>
@@ -191,13 +199,13 @@ def header(**kwargs):
     htm +='''</h1>        
         <div class="container">
             <nav>
-                <a href="//">PROJECTS</a>
+                <a href="//">PROFESH</a>
             </nav>
             <nav>
-                <a href="//">BLOG</a>
+                <a href="//">PERSONAL</a>
             </nav>
             <nav>
-                <a href="//">MUSIC</a>
+                <a href="//">EPHEMERA</a>
             </nav>
         </div>
     </header>
@@ -231,21 +239,27 @@ def buildTagPage(f, l):
 '''
     htm += header(**k)
     htm +='''    <main class="container">
+    <p class="headertext">Posts tagged with:</p>
     <h1>[{}]</h1>'''.format(f[:-4].upper())
-    l.sort(reverse=True)
-    for line in l:
-        items = line.split(',')
-        postdate = items[0]
-        urlseg = items[2]
-        posttitle = items[1]
+#    l.sort(reverse=True)
+    for line in sorted(l, key=lambda k: k['date'], reverse=True):
+#        items = line.split(',')
+#        postdate = items[0]
+#        urlseg = items[2]
+#        posttitle = items[1]
+        d = parse(line['date'])
+        cleand = '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
         htm +='''
         <section class="post_link">
-            <h2><a href="../../{}">{}</a></h2>
             <p class="date">{}</p>
-        </section>'''.format(urlseg, posttitle, postdate)
+            <h2><a href="../../{}">{}</a></h2>'''.format(cleand, line['path'], line['title'])
+        if 'summary' in line:
+            htm += '''
+            <p class="summary">{}</p>'''.format(line['summary'])
     htm +='''
+        </section>
     </main>
-<!-- i guess i should add a footer too -->
+<!-- i guess i should add a footer 'n' sidebar too -->
 </body>
 </html>    
     '''
@@ -261,6 +275,7 @@ wdir = os.path.join(localdir, 'www')
 admindir = os.path.join(localdir, 'admin')
 tagdir = os.path.join(admindir, 'tags')
 tagwebdir = os.path.join(wdir, 'tags')
+tag_trackers = ['date','title','path','summary']
 blogtitle = j['blogtitle']
 # first i will do backups of all the wdir files
 # update - jk don't really need to do that!
@@ -296,21 +311,27 @@ for s in secs:
             tags = k['tags']
             for t in tags:
                 tagfile = os.path.join(admindir, 'tags', t + '.tmp')
-                with open(tagfile, 'a') as fh:  
-                    fh.write(yyyy_mm_dd(**k) + ',')
-                    fh.write(k['title'][0] + ',')
-                    fh.write(s + '/' + k['slug'][0] + '\n')
-                    # need to do this with csv plugin to deal with commas in titles!!!!
-                    # or maybe json or whatever other format
+                with open(tagfile, 'a', encoding='utf-8', newline='') as fh:
+                    writer = csv.DictWriter(fh, fieldnames=tag_trackers, dialect='excel')
+                    newline = {}
+                    newline['date'] = yyyy_mm_dd(**k)
+                    newline['title'] = k['title'][0]
+                    newline['path'] = s + '/' + k['slug'][0]
+                    if 'summary' in k:
+                        newline['summary'] = k['summary'][0]
+                    writer.writerow(newline)
+# then let's build tag pages for each tag
 files = get_files('tmp', admindir, 'tags')
 taghtmls = {}
 for f in files:
     fn = os.path.join(tagdir, f)
-    with open(fn, 'r') as fh:
-        lines = fh.read()
-        l = lines.splitlines()
-        l.sort()
-        taghtmls[f[:-4]] = buildTagPage(f, l)
+    with open(fn, 'r', newline='') as fh:
+        reader = csv.DictReader(fh, fieldnames=tag_trackers)
+        
+#        lines = fh.read()
+#        l = lines.splitlines()
+#        l.sort()
+        taghtmls[f[:-4]] = buildTagPage(f, reader)
 for t in taghtmls:
     thtmlpath = os.path.join(tagwebdir,slugify(t))
     os.makedirs(thtmlpath, exist_ok=True)
