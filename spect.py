@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """
+swithing over to json for data storage version!
 Created August-September 2016
 @author: github.com/jeffgerhard or @jeffgerhard
 
@@ -43,7 +44,7 @@ from dateutil.parser import parse
 from spect_config import j
 import shutil
 import filecmp
-import csv
+
 
 def get_immediate_subdirectories(a_dir):
 # stackoverflow.com/questions/800197/how-to-get-all-of-the-immediate-subdirectories-in-python#800201
@@ -101,19 +102,18 @@ def buildHTML(text, **k):
     htm += '''
     <main class="container">
         <article>
-            <header>
-                <h1>{}</h1>
+            <header class="row">
+'''
+    if 'date' in k:
+        htm += '''                <p class="date">{}</p>
+'''.format(cleanDate(**k))
+    htm += '''                <h1>{}</h1>
 '''.format(k['title'][0])
     if 'summary' in k:
-        htm += '''
-                <p class="summary">{}</p>
+        htm += '''                <p class="summary">{}</p>
 '''.format(str(k['summary'][0]))
-    if 'date' in k:
-        htm += '''
-               <p class="date">{}</p>
-'''.format(cleanDate(**k))
-    htm += '''
-            </header>
+    htm += '''            </header>
+            <div class="row">
             <div class="eight columns">
 
 '''
@@ -121,26 +121,32 @@ def buildHTML(text, **k):
     g = gist.splitlines(keepends=True)
     for a in g:
         if not a == '\n':
-            htm += '\t' + a
+            htm += '\t\t\t' + a
     htm += '''
 
 
             </div>
-        <footer class="three columns">
-            <p>Please comment over on Twitter, where this post was highlighted
-            <a href="//">here</a>.</p>
-            '''
+            <footer class="four columns" id="post_details">
+'''
+    if 'date' in k:
+        htm += '''                <p>Published {} in category 
+                <a href="../../{}">{}</a>.</p>
+'''.format(cleanDate(**k), k['section'][0], k['section'][0])
+    htm +='''                <p>In lieu of comments, please respond over on
+                Twitter, where this post was highlighted
+                <a href="//">here</a>.</p>
+'''
     if 'tags' in k:
-        htm += '''<p><i>Tagged as:</i></p>
-            <ul>'''
+        htm += '''                <p><em>Tagged as:</em></p>
+                <ul class="taglist">'''
         for tag in k['tags']:
             taglink = '../../tags/' + slugify(tag)
             htm += '''
-                <li><a href="{}" style="taglink">{}</a></li>'''.format(taglink, tag)
+                    <li><a href="{}" class="taglink">{}</a></li>'''.format(taglink, tag)
         htm += '''
-            </ul>'''
+                </ul>'''
     htm +='''
-        </footer>
+            </footer></div>
         </article>
     </main>
 '''
@@ -194,18 +200,18 @@ def head(**kwargs):
 def header(**kwargs):
     htm = '''
     <header id="topbar">
-        <h1>'''
+        <h1 class="container">'''
     htm += k['section'][0]  # give this some thought
     htm +='''</h1>        
         <div class="container">
-            <nav>
-                <a href="//">PROFESH</a>
+            <nav class="one-third column">
+                <a href="../../projects">PROFESSIONAL</a>
             </nav>
-            <nav>
-                <a href="//">PERSONAL</a>
+            <nav class="one-third column">
+                <a href="../../blog">PERSONAL</a>
             </nav>
-            <nav>
-                <a href="//">EPHEMERA</a>
+            <nav class="one-third column">
+                <a href="../../etc">EPHEMERAL</a>
             </nav>
         </div>
     </header>
@@ -215,8 +221,13 @@ def header(**kwargs):
 
 def footer(**kwargs):
     htm = '''
-    <footer>
-        <p>Some misc about links can go down here i guess.</p>
+    <footer id="bottombar">
+        <div class="container">
+            <p class="one-third column">All content by <a
+            href="//jeffgerhard.com">Jeff Gerhard</a>.</p>
+            <p class="one-third column">@jeffgerhard</p>
+            <p class="one-third column">introspect [at] jeffgerhard.com</p>
+        </div>
     </footer>
 '''
     return htm
@@ -224,35 +235,36 @@ def footer(**kwargs):
 
 def sidebar(**kwargs):
     htm = '''
-    <aside>
-        [here i can put my sidebar]
-    </aside>
+<!--    <aside>
+        consider a sidebar (on widescreen only) with links to social media postings, etc. listening now. that kinda jazz. can easily cut this though.
+    </aside> -->
 '''
     return htm
 
 
 def buildTagPage(f, l):
-    k['title'] = ['[' + f[:-4].upper() + ']']
+    k['title'] = ['[' + f.upper() + ']']
     k['section'] = ['site tags']
+    tagcount = str(len(l)) + ' post'
+    if len(l)>1:
+        tagcount += 's'
     htm = head(**k)
     htm += '''<body>
 '''
     htm += header(**k)
     htm +='''    <main class="container">
-    <p class="headertext">Posts tagged with:</p>
-    <h1>[{}]</h1>'''.format(f[:-4].upper())
-#    l.sort(reverse=True)
+    <p class="headertext">{} tagged with:</p>
+    <h1>[{}]</h1>'''.format(tagcount, f.upper())
+    # LATER WILL ADD PAGING FUNCTIONALITY (LIKE, DISPLAY RESULTS 1-20, 21-40?)
     for line in sorted(l, key=lambda k: k['date'], reverse=True):
-#        items = line.split(',')
-#        postdate = items[0]
-#        urlseg = items[2]
-#        posttitle = items[1]
         d = parse(line['date'])
         cleand = '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
+        if 'section' in line:
+            insec = 'in ' + line['section']
         htm +='''
         <section class="post_link">
-            <p class="date">{}</p>
-            <h2><a href="../../{}">{}</a></h2>'''.format(cleand, line['path'], line['title'])
+            <p class="date">{} {}</p>
+            <h2><a href="../../{}">{}</a></h2>'''.format(cleand, insec, line['path'], line['title'])
         if 'summary' in line:
             htm += '''
             <p class="summary">{}</p>'''.format(line['summary'])
@@ -302,7 +314,7 @@ if os.path.exists(tagwebdir):
 os.makedirs(tagdir)
 os.makedirs(tagwebdir)
 # let's try to grab tags for now; later dates? etc?
-
+tagdict = {}
 for s in secs:
     files = get_files('md', mddir, s)
     for f in files:
@@ -311,33 +323,47 @@ for s in secs:
             tags = k['tags']
             for t in tags:
                 tagfile = os.path.join(admindir, 'tags', t + '.tmp')
-                with open(tagfile, 'a', encoding='utf-8', newline='') as fh:
-                    writer = csv.DictWriter(fh, fieldnames=tag_trackers, dialect='excel')
-                    newline = {}
-                    newline['date'] = yyyy_mm_dd(**k)
-                    newline['title'] = k['title'][0]
-                    newline['path'] = s + '/' + k['slug'][0]
-                    if 'summary' in k:
-                        newline['summary'] = k['summary'][0]
-                    writer.writerow(newline)
+                new = {}
+#                with open(tagfile, 'a', encoding='utf-8', newline='') as fh:
+#                    writer = csv.DictWriter(fh, fieldnames=tag_trackers, dialect='excel')
+#                with open(tagfile, 'w', encoding='utf-8') as fh:
+#                    json.dump([], fh)
+#                with open(tagfile, 'a', encoding='utf-8') as fh:
+                if not t in tagdict:
+                    tagdict[t] = []
+                new['date'] = yyyy_mm_dd(**k)
+                new['title'] = k['title'][0]
+                new['path'] = s + '/' + k['slug'][0]
+                if 'section' in k:
+                    new['section'] = k['section'][0]
+                if 'summary' in k:
+                    new['summary'] = k['summary'][0]
+                tagdict[t].append(new)
+#                    fh.write(json.dumps(newline, indent=4))
+#                    writer.writerow(newline)
 # then let's build tag pages for each tag
-files = get_files('tmp', admindir, 'tags')
-taghtmls = {}
-for f in files:
-    fn = os.path.join(tagdir, f)
-    with open(fn, 'r', newline='') as fh:
-        reader = csv.DictReader(fh, fieldnames=tag_trackers)
+#files = get_files('tmp', admindir, 'tags')
+#taghtmls = {}
+#for f in files:
+#    fn = os.path.join(tagdir, f)
+#    with open(fn, 'r', newline='') as fh:
+#        taghtmls = json.loads(fh.read())
+#        reader = csv.DictReader(fh, fieldnames=tag_trackers)
         
 #        lines = fh.read()
 #        l = lines.splitlines()
 #        l.sort()
-        taghtmls[f[:-4]] = buildTagPage(f, reader)
-for t in taghtmls:
+#        taghtmls[f[:-4]] = buildTagPage(f, reader)
+# print(json.dumps(tagdict, indent=2))
+for t in tagdict:
     thtmlpath = os.path.join(tagwebdir,slugify(t))
     os.makedirs(thtmlpath, exist_ok=True)
+#    print(t)
+#    print(tagdict[t])
+    taghtmls = buildTagPage(t, tagdict[t])
     tagfile = os.path.join(thtmlpath,'index.spect')
     with open(tagfile, 'w') as fh:
-        fh.write(taghtmls[t])
+        fh.write(taghtmls)
 #################################################################
 # here is the main routine to build html files
 #################################################################
