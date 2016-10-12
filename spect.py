@@ -79,10 +79,10 @@ def keywords(f, s):
         t = z.read()
     text = md.convert(t)
     k = md.Meta
-    if s == 'blog':
-        k['section'] = [blogtitle]
-    else:
-        k['section'] = [s]
+#    if s == 'blog':
+#        k['section'] = [blogtitle]
+#    else:
+    k['section'] = [s]
     k['slug'] = [yyyy_mm_dd(**k) + '_']
     if 'title' in k:
         k['slug'][0] += slugify(
@@ -105,16 +105,17 @@ def buildHTML(text, **k):
             <header class="row">
 '''
     if 'date' in k:
-        htm += '''                <p class="date">{}</p>
-'''.format(cleanDate(**k))
-    htm += '''                <h1>{}</h1>
+        htm += '                <p class="date">{} | '.format(cleanDate(**k))
+    htm += '<a href="../../{}" class="category-name">{}</a></p>'.format(k['section'][0], k['section'][0].upper())
+    htm += '''
+                <h1>{}</h1>
 '''.format(k['title'][0])
     if 'summary' in k:
         htm += '''                <p class="summary">{}</p>
 '''.format(str(k['summary'][0]))
     htm += '''            </header>
             <div class="row">
-            <div class="eight columns">
+            <div class="article-content eight columns">
 
 '''
     gist = md.convert(text)
@@ -130,14 +131,14 @@ def buildHTML(text, **k):
 '''
     if 'date' in k:
         htm += '''                <p>Published {} in category 
-                <a href="../../{}">{}</a>.</p>
+                <a class="category-name" href="../../{}">{}</a>.</p>
 '''.format(cleanDate(**k), k['section'][0], k['section'][0])
     htm +='''                <p>If you would like to comment, please do so over on
                 Twitter, where this post was simulposted
                 <a href="//">here</a>.</p>
 '''
     if 'tags' in k:
-        htm += '''                <p><em>Tagged as:</em> '''
+        htm += '''                <p class="taglist"><em>Tagged as:</em> '''
         for tag in k['tags']:
             taglink = '../../tags/' + slugify(tag)
             htm += '<a href="{}" class="taglink">{}</a> '.format(taglink, tag)
@@ -197,11 +198,16 @@ def head(**kwargs):
 def header(**kwargs):
     htm = '''
     <header id="topbar" class="container">
+        <div id ="navigator">
+            <nav><a href="//">jeffgerhard.com</a></nav>
+            <nav><a href="//">{} (blog)</a></nav>
+        </div>'''.format(blogtitle)
+    htm += '''
         <h1>'''
-    htm += k['section'][0]  # give this some thought
+    htm += blogtitle  # give this some thought
     htm +='''</h1>        
-        <div>
-            <!--<nav class="one-third column">
+        <!-- <div>
+           <nav class="one-third column">
                 <a href="../../projects">PROFESSIONAL</a>
             </nav>
             <nav class="one-third column">
@@ -209,7 +215,7 @@ def header(**kwargs):
             </nav>
             <nav class="one-third column">
                 <a href="../../etc">EPHEMERAL</a>
-            </nav>-->
+            </nav>
             <nav>
                 <a href="../../projects">PROFESSIONAL</a>
             </nav>
@@ -219,7 +225,7 @@ def header(**kwargs):
             <nav>
                 <a href="../../etc">EPHEMERAL</a>
             </nav>
-        </div>
+        </div> -->
     </header>
 '''
     return htm
