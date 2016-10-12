@@ -1,16 +1,25 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Sep 10 18:02:44 2016
-
-@author: jcg
+Configuration is set in two or three places:
+    1. config file in .spect folder in user folder
+    2. config file in admin folder
+    3. (optionally) password stored in keyring
+This awkward setup is so that I can store info in the user folder for things
+like relative paths, while keeping site variables in the admin folder
+(e.g., Dropbox)
 """
 
 import os
 import json
 from tkinter.filedialog import askdirectory, askopenfilename
-import keyring
+try:
+    import keyring
+except ImportError:
+    print('keyring not installed; password will be stored in plaintext.')
+    kr = False
 
 def checkConfigFile():
+    '''returns True/False on whether .spect directory has configfile'''
     if not os.path.exists(spectDir):
         os.makedirs(spectDir)
     if os.path.isfile(config):

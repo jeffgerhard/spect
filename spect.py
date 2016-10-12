@@ -132,19 +132,16 @@ def buildHTML(text, **k):
         htm += '''                <p>Published {} in category 
                 <a href="../../{}">{}</a>.</p>
 '''.format(cleanDate(**k), k['section'][0], k['section'][0])
-    htm +='''                <p>In lieu of comments, please respond over on
-                Twitter, where this post was highlighted
+    htm +='''                <p>If you would like to comment, please do so over on
+                Twitter, where this post was simulposted
                 <a href="//">here</a>.</p>
 '''
     if 'tags' in k:
-        htm += '''                <p><em>Tagged as:</em></p>
-                <ul class="taglist">'''
+        htm += '''                <p><em>Tagged as:</em> '''
         for tag in k['tags']:
             taglink = '../../tags/' + slugify(tag)
-            htm += '''
-                    <li><a href="{}" class="taglink">{}</a></li>'''.format(taglink, tag)
-        htm += '''
-                </ul>'''
+            htm += '<a href="{}" class="taglink">{}</a> '.format(taglink, tag)
+        htm += '</p>'
     htm +='''
             </footer></div>
         </article>
@@ -182,7 +179,7 @@ def head(**kwargs):
     htm += '''
     <link rel="stylesheet" href=
     "//fonts.googleapis.com/css?family=Bitter|Iceland|Source+Sans+Pro">'''
-    stz = ['normalize', 'skeleton']
+    stz = ['normalize', 'skeleton', 'style']
     if 'styles' in kwargs:
         for s in kwargs['styles']:
             stz.append(s)
@@ -199,18 +196,27 @@ def head(**kwargs):
 
 def header(**kwargs):
     htm = '''
-    <header id="topbar">
-        <h1 class="container">'''
+    <header id="topbar" class="container">
+        <h1>'''
     htm += k['section'][0]  # give this some thought
     htm +='''</h1>        
-        <div class="container">
-            <nav class="one-third column">
+        <div>
+            <!--<nav class="one-third column">
                 <a href="../../projects">PROFESSIONAL</a>
             </nav>
             <nav class="one-third column">
                 <a href="../../blog">PERSONAL</a>
             </nav>
             <nav class="one-third column">
+                <a href="../../etc">EPHEMERAL</a>
+            </nav>-->
+            <nav>
+                <a href="../../projects">PROFESSIONAL</a>
+            </nav>
+            <nav>
+                <a href="../../blog">PERSONAL</a>
+            </nav>
+            <nav>
                 <a href="../../etc">EPHEMERAL</a>
             </nav>
         </div>
@@ -223,10 +229,10 @@ def footer(**kwargs):
     htm = '''
     <footer id="bottombar">
         <div class="container">
-            <p class="one-third column">All content by <a
-            href="//jeffgerhard.com">Jeff Gerhard</a>.</p>
-            <p class="one-third column">@jeffgerhard</p>
-            <p class="one-third column">introspect [at] jeffgerhard.com</p>
+            <p>Except as noted, all content here is by <a
+            href="//jeffgerhard.com">Jeff Gerhard</a>. @jeffgerhard. introspect 
+            [at] jeffgerhard.com</p>
+            <p>More info about this website <a href="/about">here</a>.</p>
         </div>
     </footer>
 '''
