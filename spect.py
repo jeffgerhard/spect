@@ -86,6 +86,7 @@ def keywords(f, s):
         t = z.read()
     text = md.convert(t)
     k = md.Meta
+    k['snipped'], k['snippet'] = snipp(t)
 #    if s == 'blog':
 #        k['section'] = [blogtitle]
 #    else:
@@ -303,7 +304,38 @@ def buildTagPage(f, l):
 </html>    
     '''
     return htm
-    
+
+
+def snipp(f, limit=1000):
+    ''' return T/F of whether snipped, and markdown-style snippet of the text content; adapted from
+    http://rabexc.org/posts/html-snippets-in-python '''
+    snippet = []
+    txt = []
+    count = 0
+    blank = 0
+    lines = f.splitlines()
+    # let's break out the meta at top
+    for line in lines:
+        if blank > 0:
+            txt.append(line)
+        if line == '':
+            blank += 1
+    if len(''.join(txt)) < limit:
+        return False, txt
+    for line in txt:
+        snippet.append(line)
+        count += len(line)
+        if count >= limit:
+            snippet.append('')
+            snippet.append('**[ ... ]**')     
+            break
+#    for line in txt:
+#        if not line.strip() and snippet[-1] and snippet[-1][-1] == ".":
+#            break
+#        snippet.append(line)
+    return True, '\n'.join(snippet)
+       
+
 def buildCatPage(f, l):
     k['title'] = ['[' + f.upper() + ']']
     htm = head(**k)
@@ -389,6 +421,7 @@ for s in secs:
     files = get_files('md', mddir, s)
     for f in files:
         text, k = keywords(f, s)
+        k['text'] = text
         k['file'] = f
         k['path'] = s
         k['slug'] = ''
@@ -419,7 +452,7 @@ for s in secs:
                     k[mk] = k[mk][0]
         k['title_md'] = smp(k['title'])
         all_site_meta.append(k)
-# print(json.dumps(all_site_meta, indent=2, sort_keys=True))
+print(json.dumps(all_site_meta, indent=2, sort_keys=True))
 if os.path.exists(tagdir):
     shutil.rmtree(tagdir)
 if os.path.exists(tagwebdir):
@@ -435,7 +468,6 @@ for s in secs:
         k = [x for x in all_site_meta if x['section'] == s and x['file'] == f][0]
 #        text, k = keywords(f, s)
         if 'tags' in k:
-            print(k['tags'])
             tags = k['tags']
             for t in tags:
                 tagfile = os.path.join(admindir, 'tags', t + '.tmp')
@@ -507,7 +539,7 @@ for s in secs:
 #print(json.dumps(catpages, indent=2))
 for s in secs:
     chtmls = buildCatPage(s, catpages[s])
-    print(chtmls)
+    #print(chtmls)
 ##########################################################
 # then i want to run thru and compare 'n' delete files
 secs = get_immediate_subdirectories(wdir)
