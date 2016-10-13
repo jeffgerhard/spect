@@ -10,7 +10,7 @@ import os
 #from tkinter.filedialog import askdirectory, askopenfilename
 from subprocess import Popen, PIPE
 from spect_config import j
-
+from spect_config import password as pw
 class UploadFailed(Exception):
     pass
 
@@ -38,5 +38,5 @@ localdir = j['localdir']
 mddir = os.path.join(localdir, 'md')
 wdir = os.path.join(localdir, 'www')
 WINSCP = j['winscp']
-upload_files(j['site'], j['username'], j['password'], j['hostkeys'],
+upload_files(j['site'], j['username'], pw, j['hostkeys'],
              wdir, j['sitefolder'])

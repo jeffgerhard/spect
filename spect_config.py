@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Configuration is set in two or three places:
-    1. config file in .spect folder in user folder
-    2. config file in admin folder
-    3. (optionally) password stored in keyring
-This awkward setup is so that I can store info in the user folder for things
-like relative paths, while keeping site variables in the admin folder
-(e.g., Dropbox)
+Working with the config file, which is located in the user folder
+If keyring is installed, that will hold the server password
+If not, I can add a functionality to include the pw in the config
+
+If run separately, will offer options to reset configuration / may add more
+admin features here later
 """
 
 import os
@@ -14,6 +13,7 @@ import json
 from tkinter.filedialog import askdirectory, askopenfilename
 try:
     import keyring
+    kr = True
 except ImportError:
     print('keyring not installed; password will be stored in plaintext.')
     kr = False
@@ -27,15 +27,6 @@ def checkConfigFile():
     else:
         return False
 
-def addMapSecs():
-    t = input('Add a section title (or X to cancel): ')
-    if t.lower() == 'x':
-        return titlemap
-    else:
-        j['titlemap'][t] = input('What name should the folder have for "{}"? '.format(t))
-        print(j['titlemap'])
-        addMapSecs()
-
 def rebuildConfig(j):
     for cfg in ['blogtitle','site','sitefolder']:
         if cfg in j:
@@ -43,15 +34,7 @@ def rebuildConfig(j):
                 j[cfg] = input(varlib[cfg])
         else:
             j[cfg] = input(varlib[cfg])
-    if 'titlemap' in j:
-        print("Section titles are currently mapped like this:", json.dumps(j['titlemap'], indent=2))
-        if input('Would you like to change them (y/n) ?').lower() == "y":
-            addMapSecs()
-    else:
-        if input(varlib['titlemap']).lower() == "y":
-            j['titlemap'] = dict()
-            addMapSecs()
-    for cfg in ['username', 'password', 'hostkeys']:
+    for cfg in ['username', 'hostkeys']:
         if cfg in j:
             if input('Change {} from "{}" (y/n)? '.format(cfg, j[cfg])).lower() == "y":
                 j[cfg] = input(varlib[cfg])
@@ -67,22 +50,22 @@ def rebuildConfig(j):
             j['winscp'] = askopenfilename(title=filelib['winscp'])
     else:
         j['winscp'] = askopenfilename(title=filelib['winscp'])
+    if kr:
+        pw = keyring.get_password('spect', j['username'])
+        if input('Change password from {}? (y/n) '.format(pw)).lower() == "y":
+            newpw = input('New password: ')
+            keyring.set_password('spect', j['username'], newpw)
     return j            
-
 
 userDir = os.path.expanduser('~')
 spectDir = os.path.join(userDir, '.spect')
 config = os.path.join(spectDir, 'config.ini')
-version = '0.1'
+version = '0.2.1' # 10/12/2016
 varlib = {'blogtitle': "ok so what is your blog's name? ",
            'site': 'web host site (e.g., example.com)? ',
            'sitefolder': 'folder on server to use (e.g., "public_html/site") ?',
            'username': 'remote host username? ',
            'password': 'remote host password? ',
-           'titlemap': '''spect can optionally map "section" to "foldernames",
-so that, for example, the section called "personal" shows up
-with a folder structure like example.com/blog
-Do you want to do that? (y/n) ''',
             'hostkeys': 'insert the scary hostkeys string from winscp '}
 folderlib = {'localdir': '''Choose a local directory, like "website", that has
 the "md" directory inside it:'''}
@@ -100,19 +83,13 @@ first we'll set up some variables, then we need to locate some specific files an
     sitefolder = input('folder on site to use? (e.g. "public_html/site") ')
     username = input('remote host username? ')
     password = input('remote host password? ')
-    if input('''
-spect can optionally map "section" to "foldernames",
-so that, for example, the section called "personal" shows up
-with a folder structure like {}/blog
-Do you want to do that? (y/n)'''.format(sitefolder)) == "y":
-        titlemap = addMapSecs()
     hostkeys = input('scary hostkeys string that you barely understand? ')
     winscp = askopenfilename(title='find the winscp.com file! ')
     localdir = askdirectory(title=
     'Choose a local directory, like "website", that has the "md" directory inside '
     )
     for i in ('blogtitle', 'site', 'hostkeys', 'username',
-              'sitefolder', 'localdir', 'winscp', 'titlemap', 'version'):
+              'sitefolder', 'localdir', 'winscp', 'version'):
         configurations[i] = locals()[i]
     with open(config, 'w', encoding='utf-8') as fh:
         fh.write(json.dumps(configurations, indent=4, sort_keys=True))
@@ -120,21 +97,26 @@ Do you want to do that? (y/n)'''.format(sitefolder)) == "y":
 
 with open(config, 'r', encoding='utf-8') as fh:
     data = fh.read()
-
 j = json.loads(data)
-j['password'] = keyring.get_password('spect', j['username'])
-if not 'version' in j:
-    print('No version found! Rebuilding config...\n\n')
-    j = rebuildConfig(j)
-    j['version'] = version
-    with open(config, 'w', encoding='utf-8') as fh:
-        fh.write(json.dumps(j, indent=2, sort_keys=True))
-    keyring.set_password('spect', j['username'], j['password'])
-if not j['version'] == version:
-    print("\n\nConfiguration version is out of date. Let's rebuild.\n\n")
-    j = rebuildConfig(j)
-    j['version'] = version
-    with open(config, 'w', encoding='utf-8') as fh:
-        fh.write(json.dumps(j, indent=2, sort_keys=True))
-    keyring.set_password('spect', j['username'], j['password'])
-
+password = keyring.get_password('spect', j['username'])
+if __name__ == "__main__":
+    if input('set up configuration? (y/n) ').lower() == 'y':
+            #redo configuration stuff
+        j['version'] = version
+        rebuildConfig(j)
+else:
+    if not 'version' in j:
+        print('No version found! Rebuilding config...\n\n')
+        j = rebuildConfig(j)
+        j['version'] = version
+        with open(config, 'w', encoding='utf-8') as fh:
+            fh.write(json.dumps(j, indent=2, sort_keys=True))
+        keyring.set_password('spect', j['username'], password)
+    if not j['version'] == version:
+        print("\n\nConfiguration version is out of date. Let's rebuild.\n\n")
+        j = rebuildConfig(j)
+        j['version'] = version
+        with open(config, 'w', encoding='utf-8') as fh:
+            fh.write(json.dumps(j, indent=2, sort_keys=True))
+        keyring.set_password('spect', j['username'], password)
+    

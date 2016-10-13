@@ -44,6 +44,8 @@ from dateutil.parser import parse
 from spect_config import j
 import shutil
 import filecmp
+import json
+from smartypants import smartypants as smp
 
 
 def get_immediate_subdirectories(a_dir):
@@ -65,6 +67,11 @@ def cleanDate(**k):
         d = parse(k['date'][0])
         return '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
 
+def cleanDate2(x):
+    ''' return text date and then a yyyy-mm-dd date '''
+    d = parse(x)
+    cleandate = '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
+    return cleandate, str(d.date())
 
 def get_files(ext, path, directory):
     a_dir = os.path.join(path, directory)
@@ -83,7 +90,7 @@ def keywords(f, s):
 #        k['section'] = [blogtitle]
 #    else:
     k['section'] = [s]
-    k['slug'] = [yyyy_mm_dd(**k) + '_']
+    k['slug'] = [yyyy_mm_dd(**k) + '--']
     if 'title' in k:
         k['slug'][0] += slugify(
             k['title'][0], max_length=28,
@@ -93,6 +100,12 @@ def keywords(f, s):
         k['slug'][0] += 'untitled'
         k['title'][0] = 'untitled'  # later, grab file name as title
     return text, k
+
+def keywords2(f, s):
+    h = os.path.join(mddir, s, f)
+    with open(h, mode='r', encoding='utf-8') as z:
+        t = z.read()
+    return md.convert(t) # just return the md text
 
 
 def buildHTML(text, **k):
@@ -272,7 +285,7 @@ def buildTagPage(f, l):
         d = parse(line['date'])
         cleand = '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
         if 'section' in line:
-            insec = 'in ' + line['section']
+            insec = 'in category <a class="category-name" href="../{}">{}</a>'.format(line['section'], line['section'])
         htm +='''
         <section class="post_link">
             <p class="date">{} {}</p>
@@ -283,14 +296,45 @@ def buildTagPage(f, l):
     htm +='''
         </section>
     </main>
-<!-- i guess i should add a footer 'n' sidebar too -->
+'''
+    htm +=footer(**k)
+    htm +='''
 </body>
 </html>    
     '''
     return htm
-    # ok this is getting somewhere and is basically the same way i can
-    # build the front blog pages, etc.
-
+    
+def buildCatPage(f, l):
+    k['title'] = ['[' + f.upper() + ']']
+    htm = head(**k)
+    htm += '''<body>
+'''
+    htm += header(**k)
+    htm +='''    <main class="container">
+    <h1>[{}]</h1>'''.format(f.upper())
+    # LATER WILL ADD PAGING FUNCTIONALITY (LIKE, DISPLAY RESULTS 1-20, 21-40?)
+    for line in sorted(l, key=lambda k: k['yyyy-mm-dd'], reverse=True):
+#        d = parse(line['date'])
+#        cleand = '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
+#        if 'section' in line:
+#            insec = 'in category <a class="category-name" href="../{}">{}</a>'.format(line['section'], line['section'])
+        htm +='''
+        <section class="post_link">
+            <p class="date">{}</p>
+            <h2><a href="../{}/{}">{}</a></h2>'''.format(line['text_date'], f, line['slug'], line['title_md'])
+        if 'summary' in line:
+            htm += '''
+            <p class="summary">{}</p>'''.format(line['summary_md'])
+    htm +='''
+        </section>
+    </main>
+'''
+    htm +=footer(**k)
+    htm +='''
+</body>
+</html>'''
+    return htm
+    
 md = m.Markdown(extensions=['meta', 'smarty'])
 # think about how to make the local md files add to the extension list
 localdir = j['localdir']
@@ -301,6 +345,7 @@ tagdir = os.path.join(admindir, 'tags')
 tagwebdir = os.path.join(wdir, 'tags')
 tag_trackers = ['date','title','path','summary']
 blogtitle = j['blogtitle']
+sitemap_in_mem = []
 # first i will do backups of all the wdir files
 # update - jk don't really need to do that!
 #secs = get_immediate_subdirectories(wdir)
@@ -319,6 +364,62 @@ internalsitemap = os.path.join(admindir, 'site.txt')
 ######################################################
 with open(internalsitemap, 'w') as fh:
     fh.write('')  # clear contents of sitemap file
+#### honestly probs don't need that anymore
+#
+#
+# in here i need to insert some parsing of the .md files and prepend
+# more meta fields (if absent) like:
+#   - text_date
+#   - yyyy-mm-dd
+#   - twitter (eventually)
+#   - slug (why not)
+# 'twould be nice to just do it in json or another better format
+# then i could ditch all these dumb [0] things
+#
+# for realz what i need to do is parse .md files into memory all in one go
+# i am pretty sure it can handle whatever i throw at it including the md.text
+#
+# and then manipulate the metadata and write it to the .md if needed
+# NB if i edit the .md's i should add a modified date to the meta!
+#
+#
+# cool.... let's do it
+all_site_meta = []
+for s in secs:
+    files = get_files('md', mddir, s)
+    for f in files:
+        text, k = keywords(f, s)
+        k['file'] = f
+        k['path'] = s
+        k['slug'] = ''
+        if 'date' in k:
+            k['date'] = k['date'][0]
+            k['text_date'], k['yyyy-mm-dd'] = cleanDate2(k['date'])
+#            k['text_date'] = cleanDate(k['date'])
+#            k['yyyy-mm-dd'] = yyyy_mm_dd(**k)
+            k['slug'] += k['yyyy-mm-dd'] + '--'
+        else:
+            pass
+            # need to apply some from file metadata
+        if not 'section' in s:
+            k['section'] = s
+        if 'title' in k:
+            k['slug'] += slugify(
+                k['title'][0], max_length=28,
+                stopwords=['the', 'a', 'an'], word_boundary=True, save_order=True
+                )
+        else:
+            k['slug'] += 'untitled'
+            k['title'][0] = 'untitled'  # later, grab file name as title
+        if 'summary' in k:
+            k['summary_md'] = smp(k['summary'][0])
+        for mk in ['section','summary','date','title']:
+            if mk in k:
+                if len(k[mk]) == 1:
+                    k[mk] = k[mk][0]
+        k['title_md'] = smp(k['title'])
+        all_site_meta.append(k)
+# print(json.dumps(all_site_meta, indent=2, sort_keys=True))
 if os.path.exists(tagdir):
     shutil.rmtree(tagdir)
 if os.path.exists(tagwebdir):
@@ -326,12 +427,15 @@ if os.path.exists(tagwebdir):
 os.makedirs(tagdir)
 os.makedirs(tagwebdir)
 # let's try to grab tags for now; later dates? etc?
+
 tagdict = {}
 for s in secs:
     files = get_files('md', mddir, s)
     for f in files:
-        text, k = keywords(f, s)
+        k = [x for x in all_site_meta if x['section'] == s and x['file'] == f][0]
+#        text, k = keywords(f, s)
         if 'tags' in k:
+            print(k['tags'])
             tags = k['tags']
             for t in tags:
                 tagfile = os.path.join(admindir, 'tags', t + '.tmp')
@@ -343,13 +447,13 @@ for s in secs:
 #                with open(tagfile, 'a', encoding='utf-8') as fh:
                 if not t in tagdict:
                     tagdict[t] = []
-                new['date'] = yyyy_mm_dd(**k)
-                new['title'] = k['title'][0]
-                new['path'] = s + '/' + k['slug'][0]
+                new['date'] = k['yyyy-mm-dd']
+                new['title'] = k['title']
+                new['path'] = s + '/' + k['slug']
                 if 'section' in k:
-                    new['section'] = k['section'][0]
+                    new['section'] = k['section']
                 if 'summary' in k:
-                    new['summary'] = k['summary'][0]
+                    new['summary'] = k['summary']
                 tagdict[t].append(new)
 #                    fh.write(json.dumps(newline, indent=4))
 #                    writer.writerow(newline)
@@ -390,11 +494,21 @@ for s in secs:
         htmlfile = os.path.join(pagedir, 'index.spect')
         with open(htmlfile, 'w') as fh:
             fh.write(htm)
-        with open(internalsitemap, 'a') as fh:
+       # with open(internalsitemap, 'a') as fh:
             # fh.write('../../' + s + '/' + k['slug'][0] + '/\n')
-            fh.write(yyyy_mm_dd(**k) + ',')
-            fh.write(k['title'][0] + ',')
-            fh.write(s + '/' + k['slug'][0] + '\n')
+         #   fh.write(json.dumps(k, indent=2, sort_keys=True))
+
+        sitemap_in_mem.append(k)
+# let's start making the main category pages
+catpages = dict()
+for s in secs:
+    catpages[s] = []
+    catpages[s] += [l for l in all_site_meta if l['section'] == s]
+#print(json.dumps(catpages, indent=2))
+for s in secs:
+    chtmls = buildCatPage(s, catpages[s])
+    print(chtmls)
+##########################################################
 # then i want to run thru and compare 'n' delete files
 secs = get_immediate_subdirectories(wdir)
 for s in secs:
