@@ -109,30 +109,30 @@ def keywords2(f, s):
     return md.convert(t) # just return the md text
 
 
-def buildHTML(text, **k):
-    htm = head(**k)
+def buildHTML(k, depth=('../','../')):
+    htm = head(k)
     htm += '<body>'
-    htm += header(**k)
+    htm += header()
     htm += '''
     <main class="container">
         <article>
             <header class="row">
 '''
     if 'date' in k:
-        htm += '                <p class="date">{} | '.format(cleanDate(**k))
-    htm += '<a href="../../{}" class="category-name">{}</a></p>'.format(k['section'][0], k['section'][0].upper())
+        htm += '                <p class="date">{} | '.format(k['text_date'])
+    htm += '<a href="{}{}" class="category-name">{}</a></p>'.format(depth[0],k['section'], str(k['section']).upper())
     htm += '''
                 <h1>{}</h1>
-'''.format(k['title'][0])
+'''.format(k['title_md'])
     if 'summary' in k:
         htm += '''                <p class="summary">{}</p>
-'''.format(str(k['summary'][0]))
+'''.format(str(k['summary_md']))
     htm += '''            </header>
             <div class="row">
             <div class="article-content eight columns">
 
 '''
-    gist = md.convert(text)
+    gist = md.convert(k['text'])
     g = gist.splitlines(keepends=True)
     for a in g:
         if not a == '\n':
@@ -145,8 +145,8 @@ def buildHTML(text, **k):
 '''
     if 'date' in k:
         htm += '''                <p>Published {} in category 
-                <a class="category-name" href="../../{}">{}</a>.</p>
-'''.format(cleanDate(**k), k['section'][0], k['section'][0])
+                <a class="category-name" href="{}{}">{}</a>.</p>
+'''.format(k['text_date'], depth[0], k['section'], k['section'])
     htm +='''                <p>If you would like to comment, please do so over on
                 Twitter, where this post was simulposted
                 <a href="//">here</a>.</p>
@@ -154,7 +154,7 @@ def buildHTML(text, **k):
     if 'tags' in k:
         htm += '''                <p class="taglist"><em>Tagged as:</em> '''
         for tag in k['tags']:
-            taglink = '../../tags/' + slugify(tag)
+            taglink = '{}tags/'.format(depth[0]) + slugify(tag)
             htm += '<a href="{}" class="taglink">{}</a> '.format(taglink, tag)
         htm += '</p>'
     htm +='''
@@ -168,8 +168,7 @@ def buildHTML(text, **k):
 </html>'''
     return htm
 
-
-def head(**kwargs):
+def head(k, depth=('../','../../')):
     htm = '''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -177,45 +176,45 @@ def head(**kwargs):
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>'''
-    if 'title' in kwargs:
-        htm += str(kwargs['title'][0])
-    if 'section' in kwargs:
-        htm += ' :: ' + kwargs['section'][0]
+    if 'title' in k:
+        htm += str(k['title'])
+    if 'section' in k:
+        htm += ' :: ' + k['section']
     else:
         htm += '&mdash; jeffgerhard.com'
     htm += '</title>'
     scz = ['scripts']
-    if 'scripts' in kwargs:
-        for s in kwargs['scripts']:
+    if 'scripts' in k:
+        for s in k['scripts']:
             scz.append(s)
     for sc in scz:
         htm += '''
-    <script source="../../scripts/{}.js"></script>'''.format(sc)
+    <script source="{}scripts/{}.js"></script>'''.format(depth[0], sc)
     htm += '''
     <link rel="stylesheet" href=
     "//fonts.googleapis.com/css?family=Bitter|Iceland|Source+Sans+Pro">'''
     stz = ['normalize', 'skeleton', 'style']
-    if 'styles' in kwargs:
-        for s in kwargs['styles']:
+    if 'styles' in k:
+        for s in k['styles']:
             stz.append(s)
     for st in stz:
         htm += '''
-    <link rel="stylesheet" href="../../styles/{}.css">'''.format(st)
+    <link rel="stylesheet" href="{}styles/{}.css">'''.format(depth[0], st)
     htm += '''
-    <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+    <link rel="icon" type="image/x-icon" href="{}favicon.ico">
     <meta name="generator" content="https://github.com/jeffgerhard/spect">
 </head>
-'''
+'''.format(depth[0])
     return htm
 
 
-def header(**kwargs):
+def header(depth=('../','../../'), **k):
     htm = '''
     <header id="topbar" class="container">
         <div id ="navigator">
             <nav><a href="//">jeffgerhard.com</a></nav>
-            <nav><a href="//">{} (blog)</a></nav>
-        </div>'''.format(blogtitle)
+            <nav><a href="{}">{} (blog)</a></nav>
+        </div>'''.format(depth[0], blogtitle)
     htm += '''
         <h1>'''
     htm += blogtitle  # give this some thought
@@ -269,15 +268,16 @@ def sidebar(**kwargs):
 
 
 def buildTagPage(f, l):
-    k['title'] = ['[' + f.upper() + ']']
-    k['section'] = ['site tags']
+    depth = ('../../','../')
+    k['title'] = '[' + f.upper() + ']'
+    k['section'] = 'site tags'
     tagcount = str(len(l)) + ' post'
     if len(l)>1:
         tagcount += 's'
-    htm = head(**k)
+    htm = head(k, depth=depth)
     htm += '''<body>
 '''
-    htm += header(**k)
+    htm += header(depth=depth)
     htm +='''    <main class="container">
     <p class="headertext">{} tagged with:</p>
     <h1>[{}]</h1>'''.format(tagcount, f.upper())
@@ -286,11 +286,11 @@ def buildTagPage(f, l):
         d = parse(line['date'])
         cleand = '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
         if 'section' in line:
-            insec = 'in category <a class="category-name" href="../{}">{}</a>'.format(line['section'], line['section'])
+            insec = 'in category <a class="category-name" href="{}{}">{}</a>'.format(depth[0], line['section'], line['section'])
         htm +='''
         <section class="post_link">
             <p class="date">{} {}</p>
-            <h2><a href="../../{}">{}</a></h2>'''.format(cleand, insec, line['path'], line['title'])
+            <h2><a href="{}{}">{}</a></h2>'''.format(cleand, insec, depth[0], line['slug'], line['title'])
         if 'summary' in line:
             htm += '''
             <p class="summary">{}</p>'''.format(line['summary'])
@@ -321,7 +321,7 @@ def snipp(f, limit=1000):
         if line == '':
             blank += 1
     if len(''.join(txt)) < limit:
-        return False, txt
+        return False, '\n'.join(txt)
     for line in txt:
         snippet.append(line)
         count += len(line)
@@ -337,36 +337,46 @@ def snipp(f, limit=1000):
        
 
 def buildCatPage(f, l):
-    k['title'] = ['[' + f.upper() + ']']
-    htm = head(**k)
+    depth = ('../','../../')
+    k['title'] = '[' + f.upper() + ']'
+    htm = head(k, depth=depth)
     htm += '''<body>
 '''
-    htm += header(**k)
+    htm += header(depth=depth)
     htm +='''    <main class="container">
     <h1>[{}]</h1>'''.format(f.upper())
     # LATER WILL ADD PAGING FUNCTIONALITY (LIKE, DISPLAY RESULTS 1-20, 21-40?)
     for line in sorted(l, key=lambda k: k['yyyy-mm-dd'], reverse=True):
-#        d = parse(line['date'])
-#        cleand = '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
-#        if 'section' in line:
-#            insec = 'in category <a class="category-name" href="../{}">{}</a>'.format(line['section'], line['section'])
         htm +='''
         <section class="post_link">
             <p class="date">{}</p>
-            <h2><a href="../{}/{}">{}</a></h2>'''.format(line['text_date'], f, line['slug'], line['title_md'])
+            <h2><a href="{}{}">{}</a></h2>'''.format(line['text_date'], depth[0], line['slug'], line['title_md'])
         if 'summary' in line:
             htm += '''
             <p class="summary">{}</p>'''.format(line['summary_md'])
-    htm +='''
-        </section>
-    </main>
+        htm += '''
+            <div class="snippet">
 '''
+        snippet = m.markdown(line['snippet'], extensions=['smarty'])
+        g = snippet.splitlines(keepends=True)
+        for a in g:
+            if not a == '\n':
+                htm += '\t\t\t' + a
+        htm +='''
+            </div>
+        </section>
+'''
+    htm += '</main>'
     htm +=footer(**k)
     htm +='''
 </body>
 </html>'''
     return htm
-    
+#######################################################
+#
+# DEFINE SOME SYSTEM VARIABLES
+#
+#
 md = m.Markdown(extensions=['meta', 'smarty'])
 # think about how to make the local md files add to the extension list
 localdir = j['localdir']
@@ -377,45 +387,24 @@ tagdir = os.path.join(admindir, 'tags')
 tagwebdir = os.path.join(wdir, 'tags')
 tag_trackers = ['date','title','path','summary']
 blogtitle = j['blogtitle']
-sitemap_in_mem = []
-# first i will do backups of all the wdir files
-# update - jk don't really need to do that!
-#secs = get_immediate_subdirectories(wdir)
-#for s in secs:
-#    subsecs = get_immediate_subdirectories(os.path.join(wdir, s))
-#    for sub in subsecs:
-#        ind = os.path.join(wdir, s, sub, 'index.html')
-#        bup = os.path.join(wdir, s, sub, 'index.bak')
-#        shutil.copy2(ind, bup)
-# then will create spect files
 secs = get_immediate_subdirectories(mddir)
-internalsitemap = os.path.join(admindir, 'site.txt')
-######################################################
-# clean up some directories and files before starting;
-# should really make sure to build basic directories too!
-######################################################
-with open(internalsitemap, 'w') as fh:
-    fh.write('')  # clear contents of sitemap file
-#### honestly probs don't need that anymore
+########################################################
+#
+# HERE ARE TAG DIRECTORIES. WE'LL DELETE THE OLD ONES AND
+# JUST DO THESE FROM SCRATCH
 #
 #
-# in here i need to insert some parsing of the .md files and prepend
-# more meta fields (if absent) like:
-#   - text_date
-#   - yyyy-mm-dd
-#   - twitter (eventually)
-#   - slug (why not)
-# 'twould be nice to just do it in json or another better format
-# then i could ditch all these dumb [0] things
+if os.path.exists(tagdir):
+    shutil.rmtree(tagdir)
+if os.path.exists(tagwebdir):
+    shutil.rmtree(tagwebdir)
+os.makedirs(tagdir)
+os.makedirs(tagwebdir)
+#######################################################
+# OK IT'S TIME TO DO THIS
 #
-# for realz what i need to do is parse .md files into memory all in one go
-# i am pretty sure it can handle whatever i throw at it including the md.text
+# let's assemble the whole dang site into a dictionary
 #
-# and then manipulate the metadata and write it to the .md if needed
-# NB if i edit the .md's i should add a modified date to the meta!
-#
-#
-# cool.... let's do it
 all_site_meta = []
 for s in secs:
     files = get_files('md', mddir, s)
@@ -428,12 +417,9 @@ for s in secs:
         if 'date' in k:
             k['date'] = k['date'][0]
             k['text_date'], k['yyyy-mm-dd'] = cleanDate2(k['date'])
-#            k['text_date'] = cleanDate(k['date'])
-#            k['yyyy-mm-dd'] = yyyy_mm_dd(**k)
             k['slug'] += k['yyyy-mm-dd'] + '--'
         else:
-            pass
-            # need to apply some from file metadata
+            pass  # later, apply some from file metadata?
         if not 'section' in s:
             k['section'] = s
         if 'title' in k:
@@ -453,102 +439,61 @@ for s in secs:
         k['title_md'] = smp(k['title'])
         all_site_meta.append(k)
 print(json.dumps(all_site_meta, indent=2, sort_keys=True))
-if os.path.exists(tagdir):
-    shutil.rmtree(tagdir)
-if os.path.exists(tagwebdir):
-    shutil.rmtree(tagwebdir)
-os.makedirs(tagdir)
-os.makedirs(tagwebdir)
-# let's try to grab tags for now; later dates? etc?
+# LATER I MIGHT WANT TO SAVE THIS IN AN ADMIN FOLDER, BACK IT
+# UP TO SERVER, AND COMPARE ON REBUILD
+#############################################################
+# COOL! NOW WE'LL COMPILE TAG INFO TO BUILD TAG PAGES 
 
-tagdict = {}
+tagdict = {} # there is probably a better way to do this, but i'm just
+             # reconstructing the site data to group by tag
 for s in secs:
     files = get_files('md', mddir, s)
     for f in files:
         k = [x for x in all_site_meta if x['section'] == s and x['file'] == f][0]
-#        text, k = keywords(f, s)
         if 'tags' in k:
-            tags = k['tags']
-            for t in tags:
-                tagfile = os.path.join(admindir, 'tags', t + '.tmp')
-                new = {}
-#                with open(tagfile, 'a', encoding='utf-8', newline='') as fh:
-#                    writer = csv.DictWriter(fh, fieldnames=tag_trackers, dialect='excel')
-#                with open(tagfile, 'w', encoding='utf-8') as fh:
-#                    json.dump([], fh)
-#                with open(tagfile, 'a', encoding='utf-8') as fh:
-                if not t in tagdict:
-                    tagdict[t] = []
-                new['date'] = k['yyyy-mm-dd']
-                new['title'] = k['title']
-                new['path'] = s + '/' + k['slug']
-                if 'section' in k:
-                    new['section'] = k['section']
-                if 'summary' in k:
-                    new['summary'] = k['summary']
-                tagdict[t].append(new)
-#                    fh.write(json.dumps(newline, indent=4))
-#                    writer.writerow(newline)
-# then let's build tag pages for each tag
-#files = get_files('tmp', admindir, 'tags')
-#taghtmls = {}
-#for f in files:
-#    fn = os.path.join(tagdir, f)
-#    with open(fn, 'r', newline='') as fh:
-#        taghtmls = json.loads(fh.read())
-#        reader = csv.DictReader(fh, fieldnames=tag_trackers)
-        
-#        lines = fh.read()
-#        l = lines.splitlines()
-#        l.sort()
-#        taghtmls[f[:-4]] = buildTagPage(f, reader)
-# print(json.dumps(tagdict, indent=2))
+            for tag in k['tags']:
+                tag = tag.lower()
+                if not tag in tagdict:
+                    tagdict[tag] = [] 
+                tagdict[tag].append(k)
+# then making .spect files for them [will transform these later to html]
 for t in tagdict:
     thtmlpath = os.path.join(tagwebdir,slugify(t))
     os.makedirs(thtmlpath, exist_ok=True)
-#    print(t)
-#    print(tagdict[t])
     taghtmls = buildTagPage(t, tagdict[t])
     tagfile = os.path.join(thtmlpath,'index.spect')
     with open(tagfile, 'w') as fh:
         fh.write(taghtmls)
+        
 #################################################################
 # here is the main routine to build html files
 #################################################################
-for s in secs:
-    files = get_files('md', mddir, s)
-    for f in files:
-        text, k = keywords(f, s)
-        htm = buildHTML(text, **k)
-        pagedir = os.path.join(wdir, s, k['slug'][0])
-        if not os.path.exists(pagedir):
-            os.makedirs(pagedir)
-        htmlfile = os.path.join(pagedir, 'index.spect')
-        with open(htmlfile, 'w') as fh:
-            fh.write(htm)
-       # with open(internalsitemap, 'a') as fh:
-            # fh.write('../../' + s + '/' + k['slug'][0] + '/\n')
-         #   fh.write(json.dumps(k, indent=2, sort_keys=True))
 
-        sitemap_in_mem.append(k)
-# let's start making the main category pages
-catpages = dict()
+for f in all_site_meta:
+    htm = buildHTML(f)
+    pagedir = os.path.join(wdir, f['slug'])
+    if not os.path.exists(pagedir):
+        os.makedirs(pagedir)
+    htmlfile = os.path.join(pagedir, 'index.spect')
+    with open(htmlfile, 'w') as fh:
+        fh.write(htm)    
+
+# let's also make the main category pages
+catpages = dict() # basically the same technique as the tag pages...
 for s in secs:
     catpages[s] = []
     catpages[s] += [l for l in all_site_meta if l['section'] == s]
-#print(json.dumps(catpages, indent=2))
 for s in secs:
     chtmls = buildCatPage(s, catpages[s])
-    #print(chtmls)
+    catpage = os.path.join(wdir, s, 'index.html')
+    with open(catpage, 'w') as fh:
+        fh.write(chtmls)
 ##########################################################
 # then i want to run thru and compare 'n' delete files
-secs = get_immediate_subdirectories(wdir)
-for s in secs:
-    subsecs = get_immediate_subdirectories(os.path.join(wdir, s))
-    for sub in subsecs:
-        ind = os.path.join(wdir, s, sub, 'index.html')
-        # bup = os.path.join(wdir, s, sub, 'index.bak')
-        spct = os.path.join(wdir, s, sub, 'index.spect')
+def compare_spect(folders, path):
+    for f in folders:
+        ind = os.path.join(path, f, 'index.html')
+        spct = os.path.join(path, f, 'index.spect')
         if os.path.exists(ind):
             # compare files and delete one
             if os.path.exists(spct):
@@ -557,7 +502,27 @@ for s in secs:
                 else:
                     os.remove(ind)
                     os.rename(spct, ind)
-            else:  # no .spect file so delete this whole dir
-                shutil.rmtree(os.path.join(wdir, s, sub))
-        else:  # no index file so just use the spct
-            os.rename(spct, ind)
+#            else:  # no .spect file so delete this whole dir
+#                shutil.rmtree(os.path.join(wdir, s, sub))
+        elif os.path.exists(spct):
+                os.rename(spct, ind)
+wsecs = get_immediate_subdirectories(wdir)
+compare_spect(wsecs, wdir)
+for s in wsecs:
+    subsecs = get_immediate_subdirectories(os.path.join(wdir, s))
+    compare_spect(subsecs, os.path.join(wdir, s))
+#    for sub in subsecs:
+#        ind = os.path.join(wdir, s, sub, 'index.html')
+#        spct = os.path.join(wdir, s, sub, 'index.spect')
+#        if os.path.exists(ind):
+#            # compare files and delete one
+#            if os.path.exists(spct):
+#                if filecmp.cmp(ind, spct):
+#                    os.remove(spct)
+#                else:
+#                    os.remove(ind)
+#                    os.rename(spct, ind)
+#            else:  # no .spect file so delete this whole dir
+#                shutil.rmtree(os.path.join(wdir, s, sub))
+#        else:  # no index file so just use the spct
+#            os.rename(spct, ind)
