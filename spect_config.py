@@ -6,6 +6,11 @@ If not, I can add a functionality to include the pw in the config
 
 If run separately, will offer options to reset configuration / may add more
 admin features here later
+
+note that there is some site-level metadata that would be good to put into
+an admin folder and also upload to the server. things like site description,
+category descriptions, cat types (i want to implement a tumblr-style category)
+
 """
 
 import os

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-swithing over to json for data storage version!
-Created August-September 2016
+Created August-October 2016
 @author: github.com/jeffgerhard or @jeffgerhard
 
 spect is a static site generator customized to my own needs, in active development.
@@ -9,31 +8,24 @@ spect is a static site generator customized to my own needs, in active developme
 development phase 1: just generate some html files in a directory structure
 of index.html files 
 
-also i need to clean up the configuration of the styles and sections;
-    also i need to think about generated pages like front of blog,
-    and what wordpress considers 'pages'
+last steps left to complete: front of blog, and maybe "pages"
+ - text content; category descriptions; list categories and tags by popularity
+ - look into expandable snippets (including tags pages)
+ - split out stylesheets (external to spect, really), make diff. categories diff. colors?
+ - clean up code
     
-    md files can be like type: page with default to be blog-type
-    
-also also i need to consider the organization of the .md files. i think 
-    including 'section' should override folder structure. so could just have
-    a single .md folder if a user wanted that
+phase 2: related posts; more tumblr-type features (incl. youtubes and whatnot)
+    generate rss feed and sitemap
 
-phase 2: generate tags pages and similar (like related content);
-    generate rss feed and sitemap; note that i need to generate tags 
-    pages before the .html pages
-
-phase 3: configure an auto-upload to server [coming along nicely]
+phase 3: a separate script to easily generate new .md files including
+    dates, sections, etc. NB this part can include publication date issues;
     incorporate some kind of spellcheck and can stash a user dictionary
     on the server. see https://pythonhosted.org/pyenchant/tutorial.html
     make it easy to edit the config file or reset it
 
-phase 4: a separate script to easily generate new .md files including
-    dates, sections, etc. NB this part can include publication date issues
+phase 4: think about .htaccess and redirects; also 404s and all that
 
-phase 5: think about .htaccess and redirects; also 404s and all that
-
-consider implementing comments. see https://github.com/jimpick/lambda-comments
+phase 5: consider implementing comments. see https://github.com/jimpick/lambda-comments
 
 """
 
@@ -93,13 +85,13 @@ def keywords(f, s):
     k['section'] = [s]
     k['slug'] = [yyyy_mm_dd(**k) + '--']
     if 'title' in k:
-        k['slug'][0] += slugify(
+        k['slug'] += slugify(
             k['title'][0], max_length=28,
             stopwords=['the', 'a', 'an'], word_boundary=True, save_order=True
             )
-    else:
-        k['slug'][0] += 'untitled'
-        k['title'][0] = 'untitled'  # later, grab file name as title
+#    else:
+#        k['slug'] += 'untitled'
+#        k['title'] = 'untitled'  # later, grab file name as title
     return text, k
 
 def keywords2(f, s):
@@ -121,7 +113,8 @@ def buildHTML(k, depth=('../','../')):
     if 'date' in k:
         htm += '                <p class="date">{} | '.format(k['text_date'])
     htm += '<a href="{}{}" class="category-name">{}</a></p>'.format(depth[0],k['section'], str(k['section']).upper())
-    htm += '''
+    if 'title' in k:
+        htm += '''
                 <h1>{}</h1>
 '''.format(k['title_md'])
     if 'summary' in k:
@@ -282,18 +275,18 @@ def buildTagPage(f, l):
     <p class="headertext">{} tagged with:</p>
     <h1>[{}]</h1>'''.format(tagcount, f.upper())
     # LATER WILL ADD PAGING FUNCTIONALITY (LIKE, DISPLAY RESULTS 1-20, 21-40?)
-    for line in sorted(l, key=lambda k: k['date'], reverse=True):
-        d = parse(line['date'])
-        cleand = '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
+    for line in sorted(l, key=lambda k: k['yyyy-mm-dd'], reverse=True):
         if 'section' in line:
             insec = 'in category <a class="category-name" href="{}{}">{}</a>'.format(depth[0], line['section'], line['section'])
         htm +='''
         <section class="post_link">
             <p class="date">{} {}</p>
-            <h2><a href="{}{}">{}</a></h2>'''.format(cleand, insec, depth[0], line['slug'], line['title'])
+'''.format(line['text_date'], insec)
+        if 'title' in line:
+            htm += '''            <h2><a href="{}{}">{}</a></h2>'''.format(depth[0], line['slug'], line['title_md'])
         if 'summary' in line:
             htm += '''
-            <p class="summary">{}</p>'''.format(line['summary'])
+            <p class="summary">{}</p>'''.format(line['summary_md'])
     htm +='''
         </section>
     </main>
@@ -339,18 +332,31 @@ def snipp(f, limit=1000):
 def buildCatPage(f, l):
     depth = ('../','../../')
     k['title'] = '[' + f.upper() + ']'
+    k['section'] = 'Category'
+    tagcount = str(len(l)) + ' post'
+    if len(l)>1:
+        tagcount += 's'    
     htm = head(k, depth=depth)
     htm += '''<body>
 '''
     htm += header(depth=depth)
+    # I WOULD LIKE TO ADD CATEGORY DESCRIPTIONS TO THE SITE METADATA
     htm +='''    <main class="container">
-    <h1>[{}]</h1>'''.format(f.upper())
+    <p class="headertext">{} in category:</p>
+    <h1>[{}]</h1>'''.format(tagcount, f.upper())
     # LATER WILL ADD PAGING FUNCTIONALITY (LIKE, DISPLAY RESULTS 1-20, 21-40?)
     for line in sorted(l, key=lambda k: k['yyyy-mm-dd'], reverse=True):
         htm +='''
         <section class="post_link">
-            <p class="date">{}</p>
-            <h2><a href="{}{}">{}</a></h2>'''.format(line['text_date'], depth[0], line['slug'], line['title_md'])
+            '''
+        if 'title' in line:
+            htm += '''<p class="date">{}</p>
+            <h2><a href="{}{}">{}</a></h2>
+'''.format(line['text_date'], depth[0], line['slug'], line['title_md'])
+        else:
+            htm +='''
+                <p class="date"><a href="{}{}" alt="permalink">{}</a></p>
+'''.format(depth[0], line['slug'], line['text_date'])
         if 'summary' in line:
             htm += '''
             <p class="summary">{}</p>'''.format(line['summary_md'])
@@ -366,12 +372,14 @@ def buildCatPage(f, l):
             </div>
         </section>
 '''
-    htm += '</main>'
+    htm += '        </main>'
     htm +=footer(**k)
     htm +='''
 </body>
 </html>'''
     return htm
+
+
 #######################################################
 #
 # DEFINE SOME SYSTEM VARIABLES
@@ -388,6 +396,8 @@ tagwebdir = os.path.join(wdir, 'tags')
 tag_trackers = ['date','title','path','summary']
 blogtitle = j['blogtitle']
 secs = get_immediate_subdirectories(mddir)
+for s in secs:
+    os.makedirs(os.path.join(wdir, s), exist_ok=True)
 ########################################################
 #
 # HERE ARE TAG DIRECTORIES. WE'LL DELETE THE OLD ONES AND
@@ -427,16 +437,18 @@ for s in secs:
                 k['title'][0], max_length=28,
                 stopwords=['the', 'a', 'an'], word_boundary=True, save_order=True
                 )
+            k['title_md'] = smp(k['title'][0])
+        elif 'spumblr_key' in k:
+            k['slug'] = k['spumblr_key'][0]
         else:
             k['slug'] += 'untitled'
-            k['title'][0] = 'untitled'  # later, grab file name as title
+            k['title'] = 'untitled'  # later, grab file name as title
         if 'summary' in k:
             k['summary_md'] = smp(k['summary'][0])
         for mk in ['section','summary','date','title']:
             if mk in k:
                 if len(k[mk]) == 1:
                     k[mk] = k[mk][0]
-        k['title_md'] = smp(k['title'])
         all_site_meta.append(k)
 print(json.dumps(all_site_meta, indent=2, sort_keys=True))
 # LATER I MIGHT WANT TO SAVE THIS IN AN ADMIN FOLDER, BACK IT
