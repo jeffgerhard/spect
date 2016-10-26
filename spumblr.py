@@ -64,7 +64,7 @@ if len(tags) > 1:
     for t in range(1, len(tags)-1):
         mdtxt += '\t{}\n'.format(tags[t])
 
-mdtxt += '\n<figure><img src="..\images\{}"'.format(imgname)
+mdtxt += '\n<figure><img src="../images/{}"'.format(imgname)
 if capt:
     mdtxt += ' alt ="{}"'.format(caption)
 # can figure out width/heigh sometime in python?
