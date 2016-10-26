@@ -8,22 +8,33 @@ spect is a static site generator customized to my own needs, in active developme
 development phase 1: just generate some html files in a directory structure
 of index.html files 
 
-last steps left to complete: front of blog, and maybe "pages"
- - text content; category descriptions; list categories and tags by popularity
- - look into expandable snippets (including tags pages)
+last steps left to complete: 
+ - make category and tag pages work the same (as cat does already)
+ - front of blog
+ - actually i should just generalize to a results format that applies to front page,
+ tags, categories somewhat equally. just need to feed the site in order
+ - clean up text content; category descriptions; list categories and tags by popularity
+ - look into making snippets expand into full text (including tags pages)
  - split out stylesheets (external to spect, really), make diff. categories diff. colors?
- - clean up code
+ - clean up code / pythonicness / modularity / theoretically usable by other people
     
-phase 2: related posts; more tumblr-type features (incl. youtubes and whatnot)
-    generate rss feed and sitemap
+phase 2:
+    - related posts
+    - enumerate results
+    - more tumblr-type features (incl. youtubes and whatnot)
+    - shrinkify images and make them click-thru to full size
+    - generate rss feed and sitemap
+    - auto-post on twitter and then link to or embed in the pages (probably
+    i'll add a 'twitter' tag to the markdowns)
+    - more robust backup features
 
 phase 3: a separate script to easily generate new .md files including
     dates, sections, etc. NB this part can include publication date issues;
     incorporate some kind of spellcheck and can stash a user dictionary
     on the server. see https://pythonhosted.org/pyenchant/tutorial.html
-    make it easy to edit the config file or reset it
 
 phase 4: think about .htaccess and redirects; also 404s and all that
+    - search functionality? [seems dumb / can use google / but maybe worth learning]
 
 phase 5: consider implementing comments. see https://github.com/jimpick/lambda-comments
 
@@ -173,8 +184,7 @@ def head(k, depth=('../','../../')):
         htm += str(k['title'])
     if 'section' in k:
         htm += ' :: ' + k['section']
-    else:
-        htm += '&mdash; jeffgerhard.com'
+    htm += ' :: ' + blogtitle + ' :: &mdash; jeffgerhard.com &mdash;'
     htm += '</title>'
     scz = ['scripts']
     if 'scripts' in k:
@@ -380,6 +390,61 @@ def buildCatPage(f, l):
     return htm
 
 
+def buildResultsPage(f, l, result_type, depth =('../','../../')):
+    ''' f functions as a title, l is the list of results, result_type
+    is a string to use to explain the results (for example, 'in catagory'),
+    default depth is for the category pages though i will probably change it'''
+    k['title'] = '[' + f.upper() + ']'  # sometime i will fix this awkward bit
+    tagcount = str(len(l)) + ' post'
+    if len(l)>1:
+        tagcount += 's'    
+    htm = head(k, depth=depth)
+    htm += '''<body>
+'''
+    htm += header(depth=depth)
+    # I WOULD LIKE TO ADD CATEGORY DESCRIPTIONS TO THE SITE METADATA
+    htm +='''    <main class="container">
+    <p class="headertext">{} {}:</p>
+    <h1>[{}]</h1>'''.format(tagcount, result_type, f.upper())
+    # LATER WILL ADD PAGING FUNCTIONALITY (LIKE, DISPLAY RESULTS 1-20, 21-40?)
+    for line in sorted(l, key=lambda k: k['yyyy-mm-dd'], reverse=True):
+        htm +='''
+        <section class="post_link">
+            '''
+        if 'title' in line:
+            htm += '''<p class="date">{}</p>
+            <h2><a href="{}{}">{}</a></h2>
+'''.format(line['text_date'], depth[0], line['slug'], line['title_md'])
+        else:
+            htm +='''
+                <p class="date"><a href="{}{}" alt="permalink">{}</a></p>
+'''.format(depth[0], line['slug'], line['text_date'])
+        if 'summary' in line:
+            htm += '''
+            <p class="summary">{}</p>'''.format(line['summary_md'])
+        htm += '''
+            <div class="snippet">
+'''
+        snippet = m.markdown(line['snippet'], extensions=['smarty'])
+        g = snippet.splitlines(keepends=True)
+        # NOTE THAT I HAVE TO CHECK THE DEPTH FOR ANY IMAGES, ETC ugh
+        # SO I RLY NEED A SEP FUNCTION TO PARSE MARKDOWN, ADDING
+        # TABS AND ADJUSTING DEPTH WHEN NEEDED!!!!
+        for a in g:
+            if not a == '\n':
+                htm += '\t\t\t' + a
+        htm +='''
+            </div>
+        </section>
+'''
+    htm += '        </main>'
+    htm +=footer(**k)
+    htm +='''
+</body>
+</html>'''
+    return htm
+
+
 #######################################################
 #
 # DEFINE SOME SYSTEM VARIABLES
@@ -472,7 +537,9 @@ for s in secs:
 for t in tagdict:
     thtmlpath = os.path.join(tagwebdir,slugify(t))
     os.makedirs(thtmlpath, exist_ok=True)
-    taghtmls = buildTagPage(t, tagdict[t])
+    taghtmls = buildResultsPage(t, tagdict[t], 'tagged with', 
+                                depth=('../../','../'))
+#    taghtmls = buildTagPage(t, tagdict[t])
     tagfile = os.path.join(thtmlpath,'index.spect')
     with open(tagfile, 'w') as fh:
         fh.write(taghtmls)
@@ -496,10 +563,18 @@ for s in secs:
     catpages[s] = []
     catpages[s] += [l for l in all_site_meta if l['section'] == s]
 for s in secs:
-    chtmls = buildCatPage(s, catpages[s])
+    chtmls = buildResultsPage(s, catpages[s], 'in category')
+#    chtmls = buildCatPage(s, catpages[s])
     catpage = os.path.join(wdir, s, 'index.html')
     with open(catpage, 'w') as fh:
         fh.write(chtmls)
+##########################################################
+# now the actual main page should be relatively easy (?)
+#
+frontpage = buildResultsPage(blogtitle, all_site_meta, 'in this blog')
+print(frontpage)
+# gotta look at the depth next!
+
 ##########################################################
 # then i want to run thru and compare 'n' delete files
 def compare_spect(folders, path):
