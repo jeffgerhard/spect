@@ -13,6 +13,7 @@ category descriptions, cat types (i want to implement a tumblr-style category)
 
 """
 
+from spect_utils import get_immediate_subdirectories
 import os
 import json
 from tkinter.filedialog import askdirectory, askopenfilename
@@ -22,6 +23,8 @@ try:
 except ImportError:
     print('keyring not installed; password will be stored in plaintext.')
     kr = False
+    # COME BACK TO THIS L8ER
+
 
 def checkConfigFile():
     '''returns True/False on whether .spect directory has configfile'''
@@ -32,8 +35,42 @@ def checkConfigFile():
     else:
         return False
 
+
+def checkAdminFile(j):
+    '''returns True/False on local admin file exists'''
+    admindir = os.path.join(j['localdir'], 'www', 'admin')
+    os.makedirs(admindir, exist_ok=True)
+    if os.path.isfile(os.path.join(admindir, 'admin.json')):
+        # need to check the categories!
+        return True
+    else:
+        return False
+
+
+def buildAdminFile(j):
+    print('''The admin info is descriptive stuff about the blog, like its title,
+category names, etc. It is stored in the local folder and we need to keep it in
+sync across all instances.''')
+    admin = dict()
+    admin['blogtitle'] = input(varlib['blogtitle'])
+    secs = get_immediate_subdirectories(j['mddir'])
+    if 'categories' in admin:
+        pass  # come back to this
+    else:
+        admin['categories'] = list()
+        for cat in secs:
+            c = dict()
+            c['category'] = cat
+            c['description'] = input('Add a description for category {}: '.format(cat))
+            # later add type
+            admin['categories'].append(c)
+# need to build the category names based on existing cats in local folder. hmm.
+    with open(os.path.join(admindir, 'admin.json'), 'w', encoding='utf-8') as fh:
+        fh.write(json.dumps(admin, indent=4, sort_keys=True))
+
+
 def rebuildConfig(j):
-    for cfg in ['blogtitle','site','sitefolder']:
+    for cfg in ['site', 'sitefolder']:
         if cfg in j:
             if input('Change {} from "{}" (y/n)? '.format(cfg, j[cfg])).lower() == "y":
                 j[cfg] = input(varlib[cfg])
@@ -60,22 +97,30 @@ def rebuildConfig(j):
         if input('Change password from {}? (y/n) '.format(pw)).lower() == "y":
             newpw = input('New password: ')
             keyring.set_password('spect', j['username'], newpw)
+    mddir = os.path.join(j['localdir'], 'md')
+    wdir = os.path.join(j['localdir'], 'www')
+    admindir = os.path.join(wdir, 'admin')
+    tagdir = os.path.join(admindir, 'tags')
+    tagwebdir = os.path.join(wdir, 'tags')
+    for i in site_vars:
+        j[i] = locals()[i]
     return j            
 
 userDir = os.path.expanduser('~')
 spectDir = os.path.join(userDir, '.spect')
 config = os.path.join(spectDir, 'config.ini')
-version = '0.2.1' # 10/12/2016
+version = '0.3.0' # 10/26/2016
 varlib = {'blogtitle': "ok so what is your blog's name? ",
            'site': 'web host site (e.g., example.com)? ',
            'sitefolder': 'folder on server to use (e.g., "public_html/site") ?',
            'username': 'remote host username? ',
            'password': 'remote host password? ',
-            'hostkeys': 'insert the scary hostkeys string from winscp '}
+            'hostkeys': 'insert the scary hostkeys string from winscp ',
+            'blogdescription': 'give a description for this blog '}
 folderlib = {'localdir': '''Choose a local directory, like "website", that has
 the "md" directory inside it:'''}
 filelib = {'winscp': 'find the winscp.com file! ' }
-
+site_vars = ['mddir', 'wdir', 'admindir', 'tagdir', 'tagwebdir']
 
 if not checkConfigFile():
     configurations = {}
@@ -83,33 +128,46 @@ if not checkConfigFile():
 first we'll set up some variables, then we need to locate some specific files and directories.
 
 ''')
-    blogtitle = input("ok so what is your blog's name? ")
-    site = input('web host site? (like example.com) ')
-    sitefolder = input('folder on site to use? (e.g. "public_html/site") ')
-    username = input('remote host username? ')
-    password = input('remote host password? ')
-    hostkeys = input('scary hostkeys string that you barely understand? ')
-    winscp = askopenfilename(title='find the winscp.com file! ')
-    localdir = askdirectory(title=
-    'Choose a local directory, like "website", that has the "md" directory inside '
-    )
-    for i in ('blogtitle', 'site', 'hostkeys', 'username',
-              'sitefolder', 'localdir', 'winscp', 'version'):
-        configurations[i] = locals()[i]
-    with open(config, 'w', encoding='utf-8') as fh:
-        fh.write(json.dumps(configurations, indent=4, sort_keys=True))
-    keyring.set_password('spect', username, password)
+#    site = input('web host site? (like example.com) ')
+#    sitefolder = input('folder on site to use? (e.g. "public_html/site") ')
+#    username = input('remote host username? ')
+#    password = input('remote host password? ')
+#    hostkeys = input('scary hostkeys string that you barely understand? ')
+#    winscp = askopenfilename(title='find the winscp.com file! ')
+#    localdir = askdirectory(title=
+#    'Choose a local directory, like "website", that has the "md" directory inside '
+#    )
+    j = rebuildConfig(configurations)
 
+#    for i in ('site', 'hostkeys', 'username',
+#              'sitefolder', 'localdir', 'winscp', 'version'):
+#        configurations[i] = locals()[i]
+
+    with open(config, 'w', encoding='utf-8') as fh:
+        fh.write(json.dumps(j, indent=4, sort_keys=True))
+#    keyring.set_password('spect', username, password)
 with open(config, 'r', encoding='utf-8') as fh:
     data = fh.read()
 j = json.loads(data)
 password = keyring.get_password('spect', j['username'])
+admindir = os.path.join(j['localdir'], 'www', 'admin')
 if __name__ == "__main__":
     if input('set up configuration? (y/n) ').lower() == 'y':
             #redo configuration stuff
+        j = rebuildConfig(j)
         j['version'] = version
-        rebuildConfig(j)
+        with open(config, 'w', encoding='utf-8') as fh:
+            fh.write(json.dumps(j, indent=2, sort_keys=True))
+        keyring.set_password('spect', j['username'], password)
 else:
+    if not checkAdminFile(j):
+        print('No admin info found!')
+        dl = input('Do you want to try to download it from the server? (y/n) ')
+        #  implement that if yes
+        buildAdminFile(j)
+    with open(os.path.join(admindir, 'admin.json'), 'r', encoding='utf-8') as fh:
+        data = fh.read()
+    admin = json.loads(data)
     if not 'version' in j:
         print('No version found! Rebuilding config...\n\n')
         j = rebuildConfig(j)
@@ -124,4 +182,4 @@ else:
         with open(config, 'w', encoding='utf-8') as fh:
             fh.write(json.dumps(j, indent=2, sort_keys=True))
         keyring.set_password('spect', j['username'], password)
-    
+

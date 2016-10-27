@@ -5,76 +5,18 @@ Created August-October 2016
 
 spect is a static site generator customized to my own needs, in active development.
 
-development phase 1: just generate some html files in a directory structure
-of index.html files 
-
-last steps left to complete in phase 1:
- - clean up text content
- - category (and overall blog) descriptions // keep this in an admin folder?
- - list categories and tags and show frequency
- - look into making snippets expand into full text / keep this accessible tho
- - split out stylesheets (external to spect, really), make diff. categories diff. colors?
- - clean up code for redundancy / pythonicness / modularity / theoretically usable by other people
- - move this roadmap into a separate file or the readme.md
- - generate blank index.html files for any exposed folders (probably none)
-
-phase 2:
-    - more head metadata / opengraph stuff maybe
-    - http://humanstxt.org/
-    - https://indieweb.org/IndieAuth
-    - more complicated templates like for my "harmonies" category
-    - related posts, recent posts, prev/next links if desired
-    - enumerate results pages; do more results (eg date/month)
-    - more tumblr-type features (incl. youtubes and whatnot; embedding my own vids)
-    - shrinkify all images and make them click-thru to full size
-    - generate rss feed and sitemap
-    - auto-post to twitter and then link to or embed in the pages (probably
-    i'll add a 'twitter' tag to the markdowns)
-    - more robust backup features [stash it all on server?]
-    - better separation of content, presentation, and program
-
-phase 3: a separate script to easily generate new .md files including
-    dates, sections, etc. NB this part can resolve publication date issues;
-    incorporate some kind of spellcheck and can stash a user dictionary
-    on the server. see https://pythonhosted.org/pyenchant/tutorial.html
-
-phase 4: think about .htaccess and redirects; also 404s and all that
-    - search functionality? [seems dumb / can use google / but maybe worth learning]
-    - maybe do webmentions? https://webmention.net/implementations/
-
-phase 5: consider implementing comments. see https://github.com/jimpick/lambda-comments
-
 """
 
 import markdown as m
 import os
 from slugify import slugify
 from dateutil.parser import parse
-from spect_config import j
+from spect_config import j, admin
 import shutil
 import filecmp
 import json
 from smartypants import smartypants as smp
-
-
-def get_immediate_subdirectories(a_dir):
-# stackoverflow.com/questions/800197/how-to-get-all-of-the-immediate-subdirectories-in-python#800201
-    return [name for name in os.listdir(a_dir)
-            if os.path.isdir(os.path.join(a_dir, name))]
-
-#
-#def yyyy_mm_dd(**k):
-#    if 'date' in k:
-#        d = parse(k['date'][0])
-#        return str(d.date())
-#    else:
-#        return ''
-#
-#
-#def cleanDate(**k):
-#    if 'date' in k:
-#        d = parse(k['date'][0])
-#        return '{dt:%B} {dt.day}, {dt.year}'.format(dt=d.date())
+from spect_utils import get_immediate_subdirectories
 
 
 def cleanDate2(x):
@@ -98,27 +40,14 @@ def keywords(f, s):
     text = md.convert(t)
     k = md.Meta
     k['snipped'], k['snippet'] = snipp(t)
-#    if s == 'blog':
-#        k['section'] = [blogtitle]
-#    else:
     k['section'] = [s]
-    k['slug'] = [yyyy_mm_dd(**k) + '--']
+    k['slug'] = [cleanDate2(k['date'][0])[1] + '--']
     if 'title' in k:
         k['slug'] += slugify(
             k['title'][0], max_length=28,
             stopwords=['the', 'a', 'an'], word_boundary=True, save_order=True
             )
-#    else:
-#        k['slug'] += 'untitled'
-#        k['title'] = 'untitled'  # later, grab file name as title
     return text, k
-
-
-def keywords2(f, s):
-    h = os.path.join(mddir, s, f)
-    with open(h, mode='r', encoding='utf-8') as z:
-        t = z.read()
-    return md.convert(t) # just return the md text
 
 
 def buildHTML(k, depth=('../', '../')):
@@ -192,6 +121,7 @@ def head(k, depth=('../','../../')):
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>'''
+    # NEED TO FIX ALL THE BELOW WITH A TITLE STRING WHEN CALLED
     if 'title' in k:
         htm += str(k['title'])
     if 'section' in k:
@@ -226,7 +156,7 @@ def head(k, depth=('../','../../')):
 def header(depth=('../', '../../'), **k):
     htm = '''
     <header id="topbar" class="container">
-        <div id ="navigator">
+        <div id="navigator">
             <nav><a href="/">jeffgerhard.com</a></nav>
             <nav><a href="{}">{} (blog)</a></nav>
         </div>'''.format(depth[0], blogtitle)
@@ -262,45 +192,6 @@ def sidebar(**kwargs):
     return htm
 
 
-#def buildTagPage(f, l):
-#    depth = ('../../', '../')
-#    k['title'] = '[' + f.upper() + ']'
-#    k['section'] = 'site tags'
-#    tagcount = str(len(l)) + ' post'
-#    if len(l)>1:
-#        tagcount += 's'
-#    htm = head(k, depth=depth)
-#    htm += '''<body>
-#'''
-#    htm += header(depth=depth)
-#    htm +='''    <main class="container">
-#    <p class="headertext">{} tagged with:</p>
-#    <h1>[{}]</h1>'''.format(tagcount, f.upper())
-#    # LATER WILL ADD PAGING FUNCTIONALITY (LIKE, DISPLAY RESULTS 1-20, 21-40?)
-#    for line in sorted(l, key=lambda k: k['yyyy-mm-dd'], reverse=True):
-#        if 'section' in line:
-#            insec = 'in category <a class="category-name" href="{}{}">{}</a>'.format(depth[0], line['section'], line['section'])
-#        htm +='''
-#        <section class="post_link">
-#            <p class="date">{} {}</p>
-#'''.format(line['text_date'], insec)
-#        if 'title' in line:
-#            htm += '''            <h2><a href="{}{}">{}</a></h2>'''.format(depth[0], line['slug'], line['title_md'])
-#        if 'summary' in line:
-#            htm += '''
-#            <p class="summary">{}</p>'''.format(line['summary_md'])
-#    htm +='''
-#        </section>
-#    </main>
-#'''
-#    htm +=footer(**k)
-#    htm +='''
-#</body>
-#</html>    
-#    '''
-#    return htm
-
-
 def snipp(f, limit=1000):
     ''' return T/F of whether snipped, and markdown-style snippet of the text content; adapted from
     http://rabexc.org/posts/html-snippets-in-python '''
@@ -324,62 +215,7 @@ def snipp(f, limit=1000):
             snippet.append('')
             snippet.append('**[ ... ]**')     
             break
-#    for line in txt:
-#        if not line.strip() and snippet[-1] and snippet[-1][-1] == ".":
-#            break
-#        snippet.append(line)
     return True, '\n'.join(snippet)
-       
-
-#def buildCatPage(f, l):
-#    depth = ('../','../../')
-#    k['title'] = '[' + f.upper() + ']'
-#    k['section'] = 'Category'
-#    tagcount = str(len(l)) + ' post'
-#    if len(l)>1:
-#        tagcount += 's'    
-#    htm = head(k, depth=depth)
-#    htm += '''<body>
-#'''
-#    htm += header(depth=depth)
-#    # I WOULD LIKE TO ADD CATEGORY DESCRIPTIONS TO THE SITE METADATA
-#    htm +='''    <main class="container">
-#    <p class="headertext">{} in category:</p>
-#    <h1>[{}]</h1>'''.format(tagcount, f.upper())
-#    # LATER WILL ADD PAGING FUNCTIONALITY (LIKE, DISPLAY RESULTS 1-20, 21-40?)
-#    for line in sorted(l, key=lambda k: k['yyyy-mm-dd'], reverse=True):
-#        htm +='''
-#        <section class="post_link">
-#            '''
-#        if 'title' in line:
-#            htm += '''<p class="date">{}</p>
-#            <h2><a href="{}{}">{}</a></h2>
-#'''.format(line['text_date'], depth[0], line['slug'], line['title_md'])
-#        else:
-#            htm +='''
-#                <p class="date"><a href="{}{}" alt="permalink">{}</a></p>
-#'''.format(depth[0], line['slug'], line['text_date'])
-#        if 'summary' in line:
-#            htm += '''
-#            <p class="summary">{}</p>'''.format(line['summary_md'])
-#        htm += '''
-#            <div class="snippet">
-#'''
-#        snippet = m.markdown(line['snippet'], extensions=['smarty'])
-#        g = snippet.splitlines(keepends=True)
-#        for a in g:
-#            if not a == '\n':
-#                htm += '\t\t\t' + a
-#        htm +='''
-#            </div>
-#        </section>
-#'''
-#    htm += '        </main>'
-#    htm +=footer(**k)
-#    htm +='''
-#</body>
-#</html>'''
-#    return htm
 
 
 def buildResultsPage(f, l, result_type, depth=('../','../../')):
@@ -454,25 +290,26 @@ md = m.Markdown(extensions=['meta', 'smarty'])
 localdir = j['localdir']
 mddir = os.path.join(localdir, 'md')
 wdir = os.path.join(localdir, 'www')
-admindir = os.path.join(localdir, 'admin')
+admindir = os.path.join(wdir, 'admin')
 tagdir = os.path.join(admindir, 'tags')
 tagwebdir = os.path.join(wdir, 'tags')
 # tag_trackers = ['date', 'title', 'path', 'summary']
-blogtitle = j['blogtitle']
+blogtitle = admin['blogtitle']
 secs = get_immediate_subdirectories(mddir)
 for s in secs:
     os.makedirs(os.path.join(wdir, s), exist_ok=True)
+os.makedirs(admindir, exist_ok=True)
 ########################################################
 #
 # HERE ARE TAG DIRECTORIES. WE'LL DELETE THE OLD ONES AND
 # JUST DO THESE FROM SCRATCH
 #
-#
-if os.path.exists(tagdir):
-    shutil.rmtree(tagdir)
+# - wait why again? not that big a deal but this list will grow big over time
+#if os.path.exists(tagdir):
+#    shutil.rmtree(tagdir)
 if os.path.exists(tagwebdir):
     shutil.rmtree(tagwebdir)
-os.makedirs(tagdir)
+# os.makedirs(tagdir)
 os.makedirs(tagwebdir)
 #######################################################
 # OK IT'S TIME TO DO THIS
@@ -514,14 +351,14 @@ for s in secs:
                 if len(k[mk]) == 1:
                     k[mk] = k[mk][0]
         all_site_meta.append(k)
-print(json.dumps(all_site_meta, indent=2, sort_keys=True))
+# print(json.dumps(all_site_meta, indent=2, sort_keys=True))
 # LATER I MIGHT WANT TO SAVE THIS IN AN ADMIN FOLDER, BACK IT
 # UP TO SERVER, AND COMPARE ON REBUILD
 #############################################################
 # COOL! NOW WE'LL COMPILE TAG INFO TO BUILD TAG PAGES
 
 tagdict = {}  # there is probably a better way to do this, but i'm just
-# reconstructing the site data to group by tag
+#               reconstructing the site data to group by tag
 for s in secs:
     files = get_files('md', mddir, s)
     for f in files:
@@ -564,7 +401,7 @@ for s in secs:
 for s in secs:
     chtmls = buildResultsPage(s, catpages[s], 'in category')
 #    chtmls = buildCatPage(s, catpages[s])
-    catpage = os.path.join(wdir, s, 'index.html')
+    catpage = os.path.join(wdir, s, 'index.html')  # is there a reason not to make them as spect?
     with open(catpage, 'w') as fh:
         fh.write(chtmls)
 ##########################################################
@@ -593,6 +430,7 @@ def compare_spect(folders, path):
                     os.rename(spct, ind)
 #            else:  # no .spect file so delete this whole dir
 #                shutil.rmtree(os.path.join(wdir, s, sub))
+# **** ALERT: NEED TO COME BACK TO THIS!!!!! ****
         elif os.path.exists(spct):
                 os.rename(spct, ind)
 wsecs = get_immediate_subdirectories(wdir)
