@@ -11,7 +11,7 @@ import markdown as m
 import os
 from slugify import slugify
 from dateutil.parser import parse
-from spect_config import j, admin
+from spect_config import j, admin  # may move this around a bit soon
 import shutil
 import filecmp
 import json
@@ -218,7 +218,7 @@ def snipp(f, limit=1000):
     return True, '\n'.join(snippet)
 
 
-def buildResultsPage(f, l, result_type, depth=('../','../../')):
+def buildResultsPage(f, l, result_type, desc, depth=('../','../../')):
     ''' f functions as a title, l is the list of results, result_type
     is a string to use to explain the results (for example, 'in category'),
     default depth is for the category pages'''
@@ -234,6 +234,8 @@ def buildResultsPage(f, l, result_type, depth=('../','../../')):
     htm += '''    <main class="container">
         <p class="headertext">{} {}:</p>
         <h1>[{}]</h1>'''.format(tagcount, result_type, f.upper())
+    if desc != '':
+        htm += '        <p class="description">{}</p>'.format(smp(desc))
     # LATER WILL ADD PAGING FUNCTIONALITY (LIKE, DISPLAY RESULTS 1-20, 21-40?)
     for line in sorted(l, key=lambda k: k['yyyy-mm-dd'], reverse=True):
         if result_type == 'in category':
@@ -287,15 +289,17 @@ def buildResultsPage(f, l, result_type, depth=('../','../../')):
 #
 md = m.Markdown(extensions=['meta', 'smarty'])
 # think about how to make the local md files add to the extension list
-localdir = j['localdir']
-mddir = os.path.join(localdir, 'md')
-wdir = os.path.join(localdir, 'www')
-admindir = os.path.join(wdir, 'admin')
-tagdir = os.path.join(admindir, 'tags')
-tagwebdir = os.path.join(wdir, 'tags')
+admindir, localdir, mddir, tagdir, tagwebdir, wdir = [j.get(k) for k in ['admindir', 'localdir', 'mddir', 'tagdir', 'tagwebdir', 'wdir']]
+#localdir = j['localdir']
+#mddir = os.path.join(localdir, 'md')
+#wdir = os.path.join(localdir, 'www')
+#admindir = os.path.join(wdir, 'admin')
+#tagdir = os.path.join(admindir, 'tags')
+#tagwebdir = os.path.join(wdir, 'tags')
 # tag_trackers = ['date', 'title', 'path', 'summary']
 blogtitle = admin['blogtitle']
 secs = get_immediate_subdirectories(mddir)
+#secs = admin['secs']
 for s in secs:
     os.makedirs(os.path.join(wdir, s), exist_ok=True)
 os.makedirs(admindir, exist_ok=True)
@@ -373,7 +377,7 @@ for s in secs:
 for t in tagdict:
     thtmlpath = os.path.join(tagwebdir, slugify(t))
     os.makedirs(thtmlpath, exist_ok=True)
-    taghtmls = buildResultsPage(t, tagdict[t], 'tagged with',
+    taghtmls = buildResultsPage(t, tagdict[t], 'tagged with', '',
                                 depth=('../../', '../'))
 #    taghtmls = buildTagPage(t, tagdict[t])
     tagfile = os.path.join(thtmlpath, 'index.spect')
@@ -397,9 +401,14 @@ for f in all_site_meta:
 catpages = dict()  # basically the same technique as the tag pages...
 for s in secs:
     catpages[s] = []
+    desc = ''
     catpages[s] += [l for l in all_site_meta if l['section'] == s]
 for s in secs:
-    chtmls = buildResultsPage(s, catpages[s], 'in category')
+    if 'categories' in admin:
+        for c in admin['categories']:
+            if c['category'] == s:
+                desc = c['description']
+    chtmls = buildResultsPage(s, catpages[s], 'in category', desc)
 #    chtmls = buildCatPage(s, catpages[s])
     catpage = os.path.join(wdir, s, 'index.html')  # is there a reason not to make them as spect?
     with open(catpage, 'w') as fh:
@@ -407,7 +416,7 @@ for s in secs:
 ##########################################################
 # now the actual main page should be relatively easy (?)
 #
-frontpage = buildResultsPage(blogtitle, all_site_meta, 'in this blog',
+frontpage = buildResultsPage(blogtitle, all_site_meta, 'in this blog', '',
                              depth=('', '../../'))
 with open(os.path.join(wdir, 'index.html'), 'w') as fh:
     fh.write(frontpage)

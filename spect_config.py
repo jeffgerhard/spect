@@ -7,13 +7,40 @@ If not, I can add a functionality to include the pw in the config
 If run separately, will offer options to reset configuration / may add more
 admin features here later
 
-note that there is some site-level metadata that would be good to put into
-an admin folder and also upload to the server. things like site description,
-category descriptions, cat types (i want to implement a tumblr-style category)
+hmm running into difficulties with site upload/download / hitting the limits
+here of a config util that can serve up site variables and check config vs
+calling other files that rely on the site metadata.
+
+i almost have to map this stuff out. this will also tie into doing backups 
+and other server work in the future.
+
+think about a generalized workflow like:
+ - check site config data exists
+     - if not (or outdated version) -- add it!
+     - if yes:
+ - check admin data exists online
+ - check admin data exists locally
+     - if both: compare and ask for help if no match
+     - if online only: copy locally
+     - if local only: ask about uploading it
+     - if neither -- create it!
+
+
+so the problem is, i need a way to call CONFIG data from the upload/download tool
+in order to modify the ADMIN data
+
+could either split it out into multiple script files (not ideal)...
+or... reorganize a bit? 
+note that the uploader doesn't even need any of the admin data, just config
+
+i think probably the best thing to do is have a metadata script that checks and 
+returns both files IF NECESSARY but can just do one or t'other. but is that even
+possible?
 
 """
 
 from spect_utils import get_immediate_subdirectories
+# from spect_upload import download_admin
 import os
 import json
 from tkinter.filedialog import askdirectory, askopenfilename
@@ -163,6 +190,8 @@ else:
     if not checkAdminFile(j):
         print('No admin info found!')
         dl = input('Do you want to try to download it from the server? (y/n) ')
+#        if dl.lower() == 'y':
+#            download_admin()
         #  implement that if yes
         buildAdminFile(j)
     with open(os.path.join(admindir, 'admin.json'), 'r', encoding='utf-8') as fh:
