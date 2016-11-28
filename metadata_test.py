@@ -41,8 +41,11 @@ if __name__ == "__main__":
         if filecmp.cmp(adminbackup, adminfile):
             print('cool both admin copies are identical. you may proceed.')
             os.remove(adminbackup)
+        else:
+            print('backup admin file does not match the local file! Overwriting backup is not yet implemented so do it manually if necessary.')
     elif backup:
-        print('we have a backup, or retrieved it from online, so lets see if that will suffice')
+        print('we have a backup, or retrieved it from online, so see if that will suffice')
+        print('the backup is located at {}'.format(adminbackup))
     elif localadmin:
         print('there is no backup of the admin online! do it now!')
     else:

@@ -91,6 +91,7 @@ sync across all instances.''')
             c['description'] = input('Add a description for category {}: '.format(cat))
             # later add type
             admin['categories'].append(c)
+    admin['blogdescription'] = input('Enter the blog description (this can include markdown and you can edit it in a text editor later)')
 # need to build the category names based on existing cats in local folder. hmm.
     with open(os.path.join(admindir, 'admin.json'), 'w', encoding='utf-8') as fh:
         fh.write(json.dumps(admin, indent=4, sort_keys=True))
@@ -136,7 +137,7 @@ def rebuildConfig(j):
 userDir = os.path.expanduser('~')
 spectDir = os.path.join(userDir, '.spect')
 config = os.path.join(spectDir, 'config.ini')
-version = '0.3.0' # 10/26/2016
+version = '0.3.1' # 11/27/2016
 varlib = {'blogtitle': "ok so what is your blog's name? ",
            'site': 'web host site (e.g., example.com)? ',
            'sitefolder': 'folder on server to use (e.g., "public_html/site") ?',

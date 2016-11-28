@@ -41,12 +41,12 @@ def keywords(f, s):
     k = md.Meta
     k['snipped'], k['snippet'] = snipp(t)
     k['section'] = [s]
-    k['slug'] = [cleanDate2(k['date'][0])[1] + '--']
-    if 'title' in k:
-        k['slug'] += slugify(
-            k['title'][0], max_length=28,
-            stopwords=['the', 'a', 'an'], word_boundary=True, save_order=True
-            )
+#    k['slug'] = [cleanDate2(k['date'][0])[1] + '--']
+#    if 'title' in k:
+#        k['slug'] += slugify(
+#            k['title'][0], max_length=28,
+#            stopwords=['the', 'a', 'an'], word_boundary=True, save_order=True
+#            )
     return text, k
 
 
@@ -87,22 +87,53 @@ def buildHTML(k, depth=('../', '../')):
 '''
     if 'date' in k:
         htm += '''                <p>Published <time datetime="{}">{}</time> in
-                                  category <a class="category-name"
-                                  href="{}{}">{}</a>.</p>
+                category <a class="category-name" href="{}{}">{}</a>.
 '''.format(k['yyyy-mm-dd'], k['text_date'], depth[0], k['section'],
            k['section'])
-    htm += '''                <p>If you would like to comment, please do so
-                over on Twitter, where this post was simulposted
-                <a href="//twitter.com/something">here</a>.</p>
-'''
     if 'tags' in k:
-        htm += '''                <p class="taglist"><em>Tagged as:</em> '''
+        htm += '''                <em>Tagged as:</em> <span class="lynx">'''
         for tag in k['tags']:
             taglink = '{}tags/'.format(depth[0]) + slugify(tag)
-            htm += '<a href="{}" class="taglink" rel="tag">{}</a> '.format(taglink, tag)
-        htm += '</p>'
+            htm += '''
+                  <a href="{}" class="taglink" rel="tag">{}</a> '''.format(taglink, tag)
+        htm += '</span>'
     htm += '''
-            </footer></div>
+                </p>'''
+    if 'twitter' in k:
+        htm += '''                <p>If you would like to comment, please do so
+                over on Twitter, where this post was simulposted
+                <a href="{}">here</a>.</p>
+'''.format(k['twitter'])
+    if len(catpages[k['section']])>1:
+        htm += '''
+                <p>Latest posts in <a class="category-name" href="{}{}">{}</a>:</p> 
+                    <ul>
+'''.format(depth[0], k['section'], k['section'].upper())
+        for x in sorted(catpages[k['section']], 
+                        key=lambda y: y['yyyy-mm-dd'], reverse=True)[0:2]:
+            htm += '''                      <li><span class="list_date"><em>{}</em></span>
+                      <br><a'''.format(x['text_date'])
+            if 'summary' in x:
+                htm += ''' title="{}"
+                      '''.format(x['summary'])
+            htm += ''' href="{}{}">'''.format(depth[0],x['slug'])
+            if 'title' in x:
+                htm += x['title_md']
+            else:
+                htm += '[untitled post]'
+            htm += '''</a></li>
+'''
+        htm += '                    </ul>'
+    htm += '''
+                <p><em>Most frequent tags:</em> <span class="lynx">                         
+'''
+    for x in dictSort(tagdict)[0:3]:  # LATER I WILL UP THIS NUMBER WHEN I HAVE CONTENT!
+        htm += '''                <a href="{}tags/{}">{}</a>
+'''.format(depth[0], slugify(x[0]), x[0])
+    htm += '''                <a href="{}tags">[see all tags&hellip;]</a></span></p>
+'''.format(depth[0])
+    htm += '''            </footer>
+            </div>
         </article>
     </main>
 '''
@@ -122,11 +153,8 @@ def head(k, depth=('../','../../')):
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>'''
     # NEED TO FIX ALL THE BELOW WITH A TITLE STRING WHEN CALLED
-    if 'title' in k:
-        htm += str(k['title'])
-    if 'section' in k:
-        htm += ' :: ' + k['section']
-    htm += ' :: ' + blogtitle + ' :: &mdash; jeffgerhard.com &mdash;'
+    if 'htmltitle' in k:
+        htm += k['htmltitle']
     htm += '</title>'
     scz = ['scripts']
     if 'scripts' in k:
@@ -139,6 +167,8 @@ def head(k, depth=('../','../../')):
     <link rel="stylesheet" href=
     "//fonts.googleapis.com/css?family=Bitter%7CIceland%7CSource+Sans+Pro">'''
     stz = ['normalize', 'skeleton', 'style']
+    if 'section' in k:
+        stz.append(k['section'])
     if 'styles' in k:
         for s in k['styles']:
             stz.append(s)
@@ -222,11 +252,14 @@ def buildResultsPage(f, l, result_type, desc, depth=('../','../../')):
     ''' f functions as a title, l is the list of results, result_type
     is a string to use to explain the results (for example, 'in category'),
     default depth is for the category pages'''
-    k['title'] = '[' + f.upper() + ']'  # sometime i will fix this awkward bit
+    zzz = dict()
+    zzz['htmltitle'] = f.upper() + ' &mdash; ' + blogtitle  # sometime i will fix this awkward bit
     tagcount = str(len(l)) + ' post'
     if len(l) > 1:
         tagcount += 's'
-    htm = head(k, depth=depth)
+    if result_type == 'in category':
+        zzz['section'] = f
+    htm = head(zzz, depth=depth)
     htm += '''<body>
 '''
     htm += header(depth=depth)
@@ -281,6 +314,13 @@ def buildResultsPage(f, l, result_type, desc, depth=('../','../../')):
 </html>'''
     return htm
 
+
+def dictSort(y):
+    results = []
+    for x in sorted(y.keys(), key=lambda x: len(y[x]), 
+                    reverse=True):
+        results.append([x, len(y[x])])
+    return results
 
 #######################################################
 #
@@ -343,11 +383,15 @@ for s in secs:
                 stopwords=['the', 'a', 'an'], word_boundary=True,
                 save_order=True)
             k['title_md'] = smp(k['title'][0])
+            k['htmltitle'] = k['title'][0] + ' (' + k['text_date'] + ')'
         elif 'spumblr_key' in k:
             k['slug'] = k['spumblr_key'][0]
+            k['htmltitle'] = '[untitled post, ' + k['text_date'] + ']'
         else:
             k['slug'] += 'untitled'
+            k['htmltitle'] = '[untitled post]'
             k['title'] = 'untitled'  # later, grab file name as title
+        k['htmltitle'] += ' &mdash; ' + blogtitle + ' (' + k['section'] +')' 
         if 'summary' in k:
             k['summary_md'] = smp(k['summary'][0])
         for mk in ['section', 'summary', 'date', 'title']:
@@ -355,7 +399,7 @@ for s in secs:
                 if len(k[mk]) == 1:
                     k[mk] = k[mk][0]
         all_site_meta.append(k)
-# print(json.dumps(all_site_meta, indent=2, sort_keys=True))
+print(json.dumps(all_site_meta, indent=2, sort_keys=True))
 # LATER I MIGHT WANT TO SAVE THIS IN AN ADMIN FOLDER, BACK IT
 # UP TO SERVER, AND COMPARE ON REBUILD
 #############################################################
@@ -384,18 +428,8 @@ for t in tagdict:
     with open(tagfile, 'w') as fh:
         fh.write(taghtmls)
 
-#################################################################
-# here is the main routine to build html files
-#################################################################
 
-for f in all_site_meta:
-    htm = buildHTML(f)
-    pagedir = os.path.join(wdir, f['slug'])
-    if not os.path.exists(pagedir):
-        os.makedirs(pagedir)
-    htmlfile = os.path.join(pagedir, 'index.spect')
-    with open(htmlfile, 'w') as fh:
-        fh.write(htm)
+
 
 # let's also make the main category pages
 catpages = dict()  # basically the same technique as the tag pages...
@@ -413,14 +447,32 @@ for s in secs:
     catpage = os.path.join(wdir, s, 'index.html')  # is there a reason not to make them as spect?
     with open(catpage, 'w') as fh:
         fh.write(chtmls)
+
+#################################################################
+# here is the main routine to build html files
+#################################################################
+
+for f in all_site_meta:
+    htm = buildHTML(f)
+    pagedir = os.path.join(wdir, f['slug'])
+    if not os.path.exists(pagedir):
+        os.makedirs(pagedir)
+    htmlfile = os.path.join(pagedir, 'index.spect')
+    with open(htmlfile, 'w') as fh:
+        fh.write(htm)
+
 ##########################################################
 # now the actual main page should be relatively easy (?)
 #
-frontpage = buildResultsPage(blogtitle, all_site_meta, 'in this blog', '',
+desc = ''
+if 'blogdescription' in admin:
+    desc = admin['blogdescription']
+frontpage = buildResultsPage(blogtitle, all_site_meta, 'in this blog', desc,
                              depth=('', '../../'))
 with open(os.path.join(wdir, 'index.html'), 'w') as fh:
     fh.write(frontpage)
-# gotta look at the depth next!
+
+##########################################################
 
 
 ##########################################################
