@@ -6,21 +6,23 @@ development phase 1: just generate some html files in a directory structure of i
 - generate html pages, tag pages, category pages
 - basic uploading functionality with winscp
 - admin and config files [REALLLLLLY MESSY FOR NOW]
+- clean up text content like footer text
+- category (and overall blog) descriptions // keep this in an admin folder
+- list categories and tags and show frequency (also have tags/ and categories/ pages to list all)
 
 ### last steps left to complete in phase 1:
-- clean up text content like footer text
-- category (and overall blog) descriptions // keep this in an admin folder?
-- list categories and tags and show frequency (also have tags/ and categories/ pages to list all)
+- remove my personal site-specific stuff (mostly done but not 100%
+- flesh out config/admin a little more. need to name the folder structures here
+- sitewide (nonblog) tags are implemented but need some thinking and a hook to call
 - look into making snippets expand into full text / keep this accessible tho
 - split out stylesheets (external to spect, really), make diff. categories diff. colors?
 - clean up code for redundancy / pythonicness / modularity / theoretically usable by other people
 - clean up variable names; look at python best practices
 - generate blank index.html files for any exposed folders (admin, scripts, styles)
-- consider moving tags folder up a level so that down the road i can make it be SITE TAGS 
 
 ## PHASE 2
 - more head metadata / opengraph stuff maybe
-- site tags? by adding a hook to import data from another json file
+- schema.org stuff like 'blogposting' -- possibly in json-ld
 - http://humanstxt.org/
 - https://indieweb.org/IndieAuth
 - more complicated templates like for my "harmonies" category
