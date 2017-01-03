@@ -16,9 +16,11 @@ development phase 1: just generate some html files in a directory structure of i
 - clean up code for redundancy / pythonicness / modularity / theoretically usable by other people
 - clean up variable names; look at python best practices
 - generate blank index.html files for any exposed folders (admin, scripts, styles)
+- consider moving tags folder up a level so that down the road i can make it be SITE TAGS 
 
 ## PHASE 2
 - more head metadata / opengraph stuff maybe
+- site tags? by adding a hook to import data from another json file
 - http://humanstxt.org/
 - https://indieweb.org/IndieAuth
 - more complicated templates like for my "harmonies" category

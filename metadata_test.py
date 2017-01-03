@@ -34,6 +34,8 @@ if __name__ == "__main__":
     if download_admin(j['site'], j['username'], pw, j['hostkeys'], j['sitefolder'], j['localdir']):
         print('whoa it worked; we have an admin file online')
         backup = True
+    else:
+        backup = False
     localadmin = checkAdminFile(j)
     
     if backup and localadmin:

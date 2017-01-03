@@ -5,7 +5,7 @@ Created on Sat Sep 10 14:57:38 2016
 @author: jcg
 """
 
-# import os
+import os
 #import json
 #from tkinter.filedialog import askdirectory, askopenfilename
 from subprocess import Popen, PIPE
@@ -58,7 +58,12 @@ def download_admin(host, user, passwd, hkeys, remote, local):
 localdir = j['localdir']
 mddir = j['mddir']
 wdir = j['wdir']
+tagwdir = os.path.join(j['localdir'], 'tags')
 WINSCP = j['winscp']
+tagremote = j['sitefolder'][:-5] + '/tags' # this is deleting 'blog' but need to rethink!
 if __name__ == "__main__":
     upload_files(j['site'], j['username'], pw, j['hostkeys'],
                  j['wdir'], j['sitefolder'])
+    # now let's do tags somewhat differently... more to work on later
+#    upload_files(j['site'], j['username'], pw, j['hostkeys'],
+#                 tagwdir, tagremote)

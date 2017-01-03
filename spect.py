@@ -41,6 +41,7 @@ def keywords(f, s):
     k = md.Meta
     k['snipped'], k['snippet'] = snipp(t)
     k['section'] = [s]
+    k['source'] = 'Introspect'
 #    k['slug'] = [cleanDate2(k['date'][0])[1] + '--']
 #    if 'title' in k:
 #        k['slug'] += slugify(
@@ -61,7 +62,7 @@ def buildHTML(k, depth=('../', '../')):
 '''
     if 'date' in k:
         htm += '                <p class="date">{} | '.format(k['text_date'])
-    htm += '<a href="{}{}" class="category-name">{}</a></p>'.format(depth[0],k['section'], str(k['section']).upper())
+    htm += '<a href="{}{}/" class="category-name">{}</a></p>'.format(depth[0],k['section'], str(k['section']).upper())
     if 'title' in k:
         htm += '''
                 <h1>{}</h1>
@@ -87,26 +88,27 @@ def buildHTML(k, depth=('../', '../')):
 '''
     if 'date' in k:
         htm += '''                <p>Published <time datetime="{}">{}</time> in
-                category <a class="category-name" href="{}{}">{}</a>.
+                category <a class="category-name" href="{}{}/">{}</a>.
 '''.format(k['yyyy-mm-dd'], k['text_date'], depth[0], k['section'],
            k['section'])
     if 'tags' in k:
         htm += '''                <em>Tagged as:</em> <span class="lynx">'''
         for tag in k['tags']:
-            taglink = '{}tags/'.format(depth[0]) + slugify(tag)
+            taglink = '/tags/' + slugify(tag)
             htm += '''
-                  <a href="{}" class="taglink" rel="tag">{}</a> '''.format(taglink, tag)
+                  <a href="{}/" class="taglink" rel="tag">{}</a> '''.format(taglink, tag)
         htm += '</span>'
     htm += '''
                 </p>'''
     if 'twitter' in k:
-        htm += '''                <p>If you would like to comment, please do so
+        htm += '''
+                <p>If you would like to comment, please do so
                 over on Twitter, where this post was simulposted
                 <a href="{}">here</a>.</p>
-'''.format(k['twitter'])
+'''.format(k['twitter'][0])
     if len(catpages[k['section']])>1:
         htm += '''
-                <p>Latest posts in <a class="category-name" href="{}{}">{}</a>:</p> 
+                <p>Latest posts in <a class="category-name" href="{}{}/">{}</a>:</p> 
                     <ul>
 '''.format(depth[0], k['section'], k['section'].upper())
         for x in sorted(catpages[k['section']], 
@@ -116,7 +118,7 @@ def buildHTML(k, depth=('../', '../')):
             if 'summary' in x:
                 htm += ''' title="{}"
                       '''.format(x['summary'])
-            htm += ''' href="{}{}">'''.format(depth[0],x['slug'])
+            htm += ''' href="{}{}/">'''.format(depth[0],x['slug'])
             if 'title' in x:
                 htm += x['title_md']
             else:
@@ -128,9 +130,9 @@ def buildHTML(k, depth=('../', '../')):
                 <p><em>Most frequent tags:</em> <span class="lynx">                         
 '''
     for x in dictSort(tagdict)[0:3]:  # LATER I WILL UP THIS NUMBER WHEN I HAVE CONTENT!
-        htm += '''                <a href="{}tags/{}">{}</a>
-'''.format(depth[0], slugify(x[0]), x[0])
-    htm += '''                <a href="{}tags">[see all tags&hellip;]</a></span></p>
+        htm += '''                <a href="/tags/{}/" rel="tag">{}</a>
+'''.format(slugify(x[0]), x[0])
+    htm += '''                <a href="/tags/">[see all tags&hellip;]</a></span></p>
 '''.format(depth[0])
     htm += '''            </footer>
             </div>
@@ -144,10 +146,15 @@ def buildHTML(k, depth=('../', '../')):
     return htm
 
 
-def head(k, depth=('../','../../')):
+def head(k, depth=('../','../'), **kw):
     htm = '''<!DOCTYPE html>
 <html lang="en">
-<head>
+'''
+    if 'introspect' in k:
+        htm += '<head prefix="og: http://ogp.me/ns# article: http://ogp.me/ns/article#">'
+    else:
+        htm += '<head>'
+    htm+='''
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -156,13 +163,29 @@ def head(k, depth=('../','../../')):
     if 'htmltitle' in k:
         htm += k['htmltitle']
     htm += '</title>'
+    if 'introspect' in k:
+        kanonical = r'http://jeffgerhard.com/blog/' + k['slug'] + r'/'
+        htm += '''
+    <link rel="canonical" href="{}">'''.format(kanonical)
+        if 'summary' in k:
+            htm += '''
+    <meta property="og:description" content="{}">'''.format(k['summary_md'])
+        htm += '''
+    <meta property="og:title" content="{}">
+    <meta property="og:url" content="{}">
+    <meta property="og:site_name" content="Introspect">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:creator" content="@JeffGerhard">
+    <meta property="article:author" content="http://jeffgerhard.com/">
+    <meta property="article:published_time" content="{}">
+'''.format(k['title_md'], kanonical, k['yyyy-mm-dd'])
     scz = ['scripts']
     if 'scripts' in k:
         for s in k['scripts']:
             scz.append(s)
     for sc in scz:
         htm += '''
-    <script src="{}scripts/{}.js"></script>'''.format(depth[0], sc)
+    <script src="{}scripts/{}.js"></script>'''.format(depth[1], sc)
     htm += '''
     <link rel="stylesheet" href=
     "//fonts.googleapis.com/css?family=Bitter%7CIceland%7CSource+Sans+Pro">'''
@@ -174,25 +197,27 @@ def head(k, depth=('../','../../')):
             stz.append(s)
     for st in stz:
         htm += '''
-    <link rel="stylesheet" href="{}styles/{}.css">'''.format(depth[0], st)
+    <link rel="stylesheet" href="{}styles/{}.css">'''.format(depth[1], st)
     htm += '''
     <link rel="icon" type="image/x-icon" href="{}favicon.ico">
     <meta name="generator" content="https://github.com/jeffgerhard/spect">
 </head>
-'''.format(depth[0])
+'''.format(depth[1])
     return htm
 
 
 def header(depth=('../', '../../'), **k):
+    if 'headtitle' not in k:
+        k['headtitle'] = blogtitle
     htm = '''
     <header id="topbar" class="container">
         <div id="navigator">
             <nav><a href="/">jeffgerhard.com</a></nav>
             <nav><a href="{}">{} (blog)</a></nav>
-        </div>'''.format(depth[0], blogtitle)
+        </div>'''.format(depth[0], k['headtitle'])
     htm += '''
         <h1>'''
-    htm += blogtitle  # give this some thought
+    htm += k['headtitle']  # give this some thought
     htm += '''</h1>
     </header>
 '''
@@ -204,9 +229,9 @@ def footer(**kwargs):
     <footer id="bottombar">
         <div class="container">
             <p>Except as noted, all content here is by <a
-            href="/" rel="author">Jeff Gerhard</a>. @jeffgerhard. introspect 
+            href="/" rel="author">Jeff Gerhard</a>. @jeffgerhard. jeff 
             [at] jeffgerhard.com</p>
-            <p>More info about this website <a href="/about">here</a>.</p>
+            <p>More info about this website <a href="/about/">here</a>.</p>
         </div>
     </footer>
 '''
@@ -248,12 +273,17 @@ def snipp(f, limit=1000):
     return True, '\n'.join(snippet)
 
 
-def buildResultsPage(f, l, result_type, desc, depth=('../','../../')):
+def buildResultsPage(f, l, result_type, desc, depth=('../','../')):
     ''' f functions as a title, l is the list of results, result_type
     is a string to use to explain the results (for example, 'in category'),
     default depth is for the category pages'''
     zzz = dict()
-    zzz['htmltitle'] = f.upper() + ' &mdash; ' + blogtitle  # sometime i will fix this awkward bit
+    kw = dict()
+    zzz['htmltitle'] = f.upper()
+    if result_type == 'tagged with':
+        zzz['htmltitle'] += ' tag results'
+        zzz['styles'] = ['tags']
+    zzz['htmltitle'] += ' &mdash; jeffgerhard.com'  # sometime i will fix this awkward bit
     tagcount = str(len(l)) + ' post'
     if len(l) > 1:
         tagcount += 's'
@@ -262,8 +292,19 @@ def buildResultsPage(f, l, result_type, desc, depth=('../','../../')):
     htm = head(zzz, depth=depth)
     htm += '''<body>
 '''
-    htm += header(depth=depth)
-    # I WOULD LIKE TO ADD CATEGORY DESCRIPTIONS TO THE SITE METADATA
+    if result_type == 'tagged with':
+        kw['headtitle'] = 'site tags'
+        htm += '''
+    <header id="topbar" class="container">
+        <div id="navigator">
+            <nav><a href="/">jeffgerhard.com</a></nav>
+            <nav><a href="../">site tags</a></nav>
+        </div>
+        <h1>site tags</h1>
+    </header>
+'''
+    else:
+        htm += header()
     htm += '''    <main class="container">
         <p class="headertext">{} {}:</p>
         <h1>[{}]</h1>'''.format(tagcount, result_type, f.upper())
@@ -273,19 +314,31 @@ def buildResultsPage(f, l, result_type, desc, depth=('../','../../')):
     for line in sorted(l, key=lambda k: k['yyyy-mm-dd'], reverse=True):
         if result_type == 'in category':
             insec = ''
+        elif result_type == 'tagged with':
+            if 'categorylink' in line:
+                insec = ''' from <strong>{}</strong> in category <a class="category-name" href="{}">{}</a>
+            '''.format(line['source'], line['categorylink'], line['section'])
+            else:
+                insec = ''' from <strong>{}</strong> in category <a class="category-name" href="{}{}/">{}</a>
+            '''.format(line['source'], depth[0], slugify(line['section']), line['section'])
         else:
-            insec = ' in category <a class="category-name" href="{}{}">{}</a>'.format(depth[0], line['section'], line['section'])
+            insec = ' in category <a class="category-name" href="{}{}/">{}</a>'.format(depth[0], slugify(line['section']), line['section'])
         htm += '''
         <article class="post_link">
             '''
-        if 'title' in line:
+        if 'canonical' in line:
             htm += '''<p class="date"><time datetime="{}">{}</time>{}</p>
-            <h2><a href="{}{}">{}</a></h2>
+            <h2><a href="{}">{}</a></h2>
+'''.format(line['yyyy-mm-dd'], line['text_date'], insec,
+           line['canonical'], line['title'])
+        elif 'title' in line:
+            htm += '''<p class="date"><time datetime="{}">{}</time>{}</p>
+            <h2><a href="{}{}/">{}</a></h2>
 '''.format(line['yyyy-mm-dd'], line['text_date'], insec, depth[0],
            line['slug'], line['title_md'])
         else:
             htm += '''
-                <p class="date"><a href="{}{}" title="permalink">{}</a>{}</p>
+                <p class="date"><a href="{}{}/" title="permalink">{}</a>{}</p>
 '''.format(depth[0], line['slug'], line['text_date'], insec)
         if 'summary' in line:
             htm += '''
@@ -314,6 +367,30 @@ def buildResultsPage(f, l, result_type, desc, depth=('../','../../')):
 </html>'''
     return htm
 
+def buildPagePage(k):
+    k['htmltitle'] = k['title'] + ' &mdash; jeffgerhard.com'  # sometime i will fix this awkward bit
+    htm = head(k, depth=k['depth'])
+    htm += '''<body>
+    <header id="topbar" class="container">
+        <div id="navigator">
+            <nav><a href="/">jeffgerhard.com</a></nav>
+            <nav><a href="{}{}">{}</a></nav>
+        </div>
+        <h1>{}</h1>
+    </header>
+    <main class="container">
+'''.format(k['depth'][0], k['slug'], k['title'], k['title'].upper())
+    # LATER WILL ADD PAGING FUNCTIONALITY (LIKE, DISPLAY RESULTS 1-20, 21-40?)
+    if 'summary' in k:
+        htm += '    <div class="summary">{}</div>'.format(k['summary'])
+    htm += k['text']
+    htm += '        </main>'
+    htm += footer(**k)
+    htm += '''
+</body>
+</html>'''
+    return htm
+
 
 def dictSort(y):
     results = []
@@ -323,13 +400,22 @@ def dictSort(y):
     return results
 
 #######################################################
+# 
+# FOR RN I AM HARD CODING SOME ADDED STUFF TO INTEGRATE
+# THIS WITH MY SITE;
+# STARTING WITH EXTERNAL TAG JSON FILES!
+with open(r'C:\Users\J\Dropbox\__websites\jeffgerhard.com\archives\monodrone.org\monodrone_tagdict.json', 'r', encoding='utf-8') as fh:
+    monodrone_tagdict = json.loads(fh.read())
+
+    
+#######################################################
 #
 # DEFINE SOME SYSTEM VARIABLES
 #
 #
 md = m.Markdown(extensions=['meta', 'smarty'])
 # think about how to make the local md files add to the extension list
-admindir, localdir, mddir, tagdir, tagwebdir, wdir = [j.get(k) for k in ['admindir', 'localdir', 'mddir', 'tagdir', 'tagwebdir', 'wdir']]
+admindir, localdir, mddir, tagwebdir, wdir = [j.get(k) for k in ['admindir', 'localdir', 'mddir', 'tagwebdir', 'wdir']]
 #localdir = j['localdir']
 #mddir = os.path.join(localdir, 'md')
 #wdir = os.path.join(localdir, 'www')
@@ -368,6 +454,7 @@ for s in secs:
         k['text'] = text
         k['file'] = f
         k['path'] = s
+        k['introspect'] = 'post'
         k['slug'] = ''
         if 'date' in k:
             k['date'] = k['date'][0]
@@ -387,6 +474,7 @@ for s in secs:
         elif 'spumblr_key' in k:
             k['slug'] = k['spumblr_key'][0]
             k['htmltitle'] = '[untitled post, ' + k['text_date'] + ']'
+            k['title_md'] = k['htmltitle']
         else:
             k['slug'] += 'untitled'
             k['htmltitle'] = '[untitled post]'
@@ -399,11 +487,11 @@ for s in secs:
                 if len(k[mk]) == 1:
                     k[mk] = k[mk][0]
         all_site_meta.append(k)
-print(json.dumps(all_site_meta, indent=2, sort_keys=True))
+#print(json.dumps(all_site_meta, indent=2, sort_keys=True))
 # LATER I MIGHT WANT TO SAVE THIS IN AN ADMIN FOLDER, BACK IT
 # UP TO SERVER, AND COMPARE ON REBUILD
 #############################################################
-# COOL! NOW WE'LL COMPILE TAG INFO TO BUILD TAG PAGES
+# COOL! NOW WE'LL COMPILE TAG INFO
 
 tagdict = {}  # there is probably a better way to do this, but i'm just
 #               reconstructing the site data to group by tag
@@ -417,19 +505,6 @@ for s in secs:
                 if tag not in tagdict:
                     tagdict[tag] = []
                 tagdict[tag].append(k)
-# then making .spect files for them [will transform these later to html]
-for t in tagdict:
-    thtmlpath = os.path.join(tagwebdir, slugify(t))
-    os.makedirs(thtmlpath, exist_ok=True)
-    taghtmls = buildResultsPage(t, tagdict[t], 'tagged with', '',
-                                depth=('../../', '../'))
-#    taghtmls = buildTagPage(t, tagdict[t])
-    tagfile = os.path.join(thtmlpath, 'index.spect')
-    with open(tagfile, 'w') as fh:
-        fh.write(taghtmls)
-
-
-
 
 # let's also make the main category pages
 catpages = dict()  # basically the same technique as the tag pages...
@@ -468,12 +543,68 @@ desc = ''
 if 'blogdescription' in admin:
     desc = admin['blogdescription']
 frontpage = buildResultsPage(blogtitle, all_site_meta, 'in this blog', desc,
-                             depth=('', '../../'))
+                             depth=('', '/blog/'))
 with open(os.path.join(wdir, 'index.html'), 'w') as fh:
     fh.write(frontpage)
 
 ##########################################################
+# DO TAGS PAGES LAST
 
+# now lemme try to merge dictionaries.. ugh......
+for t in tagdict:
+    if t in monodrone_tagdict:
+        tagdict[t] += monodrone_tagdict[t]
+mergedtags = {**monodrone_tagdict, **tagdict}
+# then making .spect files for them [will transform these later to html]
+for t in mergedtags:
+    thtmlpath = os.path.join(tagwebdir, slugify(t))
+    os.makedirs(thtmlpath, exist_ok=True)
+    taghtmls = buildResultsPage(t, mergedtags[t], 'tagged with', '',
+                                depth=('../../blog/', '../../blog/')) # TROUBLE BUT EHHH
+#    taghtmls = buildTagPage(t, tagdict[t])
+    tagfile = os.path.join(thtmlpath, 'index.spect')
+    with open(tagfile, 'w', encoding='utf-8') as fh:
+        fh.write(taghtmls)
+##########################################################
+# howzabout doing a tag table for the tag main page?
+tagtable = '''
+
+    <table class="sortable">
+        <tr>
+            <th>Tag</th>
+            <th>Count</th>
+        </tr>
+'''
+# come back the below and think about secondary sort on title or something
+for t in sorted(mergedtags, key=lambda t: len(mergedtags[t]), reverse=True):
+    tagtable += '''        <tr>
+            <td><a href="{}/">{}</a></td>
+            <td>{}</td>
+        </tr>
+'''.format(slugify(t), t, len(mergedtags[t]))
+
+tagtable += '''    </table>
+'''
+
+# then use that table as the content to build a page???
+
+tablepage = dict()
+tablepage['title'] = 'all site tags'
+tablepage['scripts'] = ['sorttable']
+tablepage['summary'] = '''
+        <p>Here is a list of all site tags. Note that this includes a ton of 
+        <span style="text-decoration: line-through">useless junk</span> vintage
+        content pulled from personal websites and various internet accounts
+        dating back over a decade. In the future I will work on adding some filters 
+        here.</p>
+'''
+tablepage['text'] = tagtable
+tablepage['styles'] = ['meta', 'tags']
+tablepage['depth'] = ('/', '/blog/')
+tablepage['slug'] = 'tags'
+thetags = buildPagePage(tablepage)
+with open(os.path.join(j['tagwebdir'], 'index.html'), 'w') as fh:
+    fh.write(thetags)
 
 ##########################################################
 # then i want to run thru and compare 'n' delete files
@@ -499,6 +630,10 @@ compare_spect(wsecs, wdir)
 for s in wsecs:
     subsecs = get_immediate_subdirectories(os.path.join(wdir, s))
     compare_spect(subsecs, os.path.join(wdir, s))
+    
+wsecs = get_immediate_subdirectories(tagwebdir)
+compare_spect(wsecs, tagwebdir)
+
 #    for sub in subsecs:
 #        ind = os.path.join(wdir, s, sub, 'index.html')
 #        spct = os.path.join(wdir, s, sub, 'index.spect')

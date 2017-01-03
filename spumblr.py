@@ -39,7 +39,7 @@ def askForTags():
         return tags
 
 rn = time.strftime('%Y-%m-%d')
-img_dir = os.path.join(j['localdir'], 'www', 'images')
+img_dir = os.path.join(j['wdir'], 'images')
 image = askopenfilename(title='Select an image for tumblr-style page post',
                         initialdir=j['localdir'])
 c = input('Enter a caption: (or "X" for no caption): ')
@@ -66,7 +66,7 @@ if len(tags) > 1:
 
 mdtxt += '\n<figure><img src="../images/{}"'.format(imgname)
 if capt:
-    mdtxt += ' alt ="{}"'.format(caption)
+    mdtxt += ' alt="{}"'.format(caption)
 # can figure out width/heigh sometime in python?
 mdtxt += '>'
 if capt:

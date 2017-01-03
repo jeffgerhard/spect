@@ -65,7 +65,7 @@ def checkConfigFile():
 
 def checkAdminFile(j):
     '''returns True/False on local admin file exists'''
-    admindir = os.path.join(j['localdir'], 'www', 'admin')
+    admindir = os.path.join(j['localdir'], 'blog', 'admin')
     os.makedirs(admindir, exist_ok=True)
     if os.path.isfile(os.path.join(admindir, 'admin.json')):
         # need to check the categories!
@@ -126,10 +126,11 @@ def rebuildConfig(j):
             newpw = input('New password: ')
             keyring.set_password('spect', j['username'], newpw)
     mddir = os.path.join(j['localdir'], 'md')
-    wdir = os.path.join(j['localdir'], 'www')
+    wdir = os.path.join(j['localdir'], 'blog')
     admindir = os.path.join(wdir, 'admin')
-    tagdir = os.path.join(admindir, 'tags')
-    tagwebdir = os.path.join(wdir, 'tags')
+#    tagdir = os.path.join(admindir, 'tags')
+#    tagwebdir = os.path.join(wdir, 'tags')
+    tagwebdir = os.path.join(j['localdir'], 'tags')
     for i in site_vars:
         j[i] = locals()[i]
     return j            
@@ -137,7 +138,7 @@ def rebuildConfig(j):
 userDir = os.path.expanduser('~')
 spectDir = os.path.join(userDir, '.spect')
 config = os.path.join(spectDir, 'config.ini')
-version = '0.3.1' # 11/27/2016
+version = '0.4' # 11/29/2016 -- modifying tag dir
 varlib = {'blogtitle': "ok so what is your blog's name? ",
            'site': 'web host site (e.g., example.com)? ',
            'sitefolder': 'folder on server to use (e.g., "public_html/site") ?',
@@ -148,7 +149,7 @@ varlib = {'blogtitle': "ok so what is your blog's name? ",
 folderlib = {'localdir': '''Choose a local directory, like "website", that has
 the "md" directory inside it:'''}
 filelib = {'winscp': 'find the winscp.com file! ' }
-site_vars = ['mddir', 'wdir', 'admindir', 'tagdir', 'tagwebdir']
+site_vars = ['mddir', 'wdir', 'admindir', 'tagwebdir']
 
 if not checkConfigFile():
     configurations = {}
@@ -178,7 +179,7 @@ with open(config, 'r', encoding='utf-8') as fh:
     data = fh.read()
 j = json.loads(data)
 password = keyring.get_password('spect', j['username'])
-admindir = os.path.join(j['localdir'], 'www', 'admin')
+admindir = os.path.join(j['localdir'], 'blog', 'admin')
 if __name__ == "__main__":
     if input('set up configuration? (y/n) ').lower() == 'y':
             #redo configuration stuff
