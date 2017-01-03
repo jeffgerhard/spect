@@ -179,6 +179,9 @@ def head(k, depth=('../','../'), **kw):
     <meta property="article:author" content="http://jeffgerhard.com/">
     <meta property="article:published_time" content="{}">
 '''.format(k['title_md'], kanonical, k['yyyy-mm-dd'])
+    if 'Og-image' in k:
+        htm += '''    <meta property="og:image" content="{}">
+'''.format(k['Og-image'])
     scz = ['scripts']
     if 'scripts' in k:
         for s in k['scripts']:

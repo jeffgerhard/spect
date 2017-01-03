@@ -2,12 +2,15 @@
 """
 spect function to create tumblr-style post from an image
 STILL TO DO: look into image processing functionality to
-potentially reduce img size
+potentially reduce img size or create different size images to return to different
+browsers responsively.
 
 for example, consider using one of these: 
 http://docs.wand-py.org/en/0.4.3/
 https://tinypng.com/developers
 https://pyimageoptimizer.readthedocs.io/en/latest/readme.html
+
+LATER: expand from images to other types of tumblr-ish content
 
 """
 
@@ -53,9 +56,11 @@ tags.append(askForTags())
 identifier = rn + '--' + id_generator()
 imgname = identifier + '.' + image[-3:].lower()
 newimg = os.path.join(img_dir, imgname)
+uri = r'http://jeffgerhard.com/blog/images/' + imgname
 mdfilename = identifier + '.md'
 mdfile = os.path.join(j['localdir'], 'md', 'ephemeral', mdfilename)
 mdtxt = 'Type: tumblr\n'
+mdtxt += 'Og-image: {}\n'.format(uri)
 mdtxt += 'Spumblr_key: {}\n'.format(identifier)
 mdtxt += 'Date: {}\n'.format(rn)
 if len(tags) > 0:
