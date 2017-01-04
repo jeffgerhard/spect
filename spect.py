@@ -152,6 +152,9 @@ def buildHTML(k, depth=('../', '../')):
 </html>'''
     return htm
 
+def kanonical(k):
+    return r'http://jeffgerhard.com/blog/' + k['slug'] + r'/'
+
 
 def head(k, depth=('../','../'), **kw):
     htm = '''<!DOCTYPE html>
@@ -171,10 +174,8 @@ def head(k, depth=('../','../'), **kw):
         htm += k['htmltitle']
     htm += '</title>'
     if 'introspect' in k:
-        kanonical = r'http://jeffgerhard.com/blog/' + k['slug'] + r'/'
         htm += '''
-    <link rel="canonical" href="{}">
-    <meta itemprop="url" content="{}">'''.format(kanonical, kanonical)
+    <link rel="canonical" href="{}">'''.format(kanonical(k))
         if 'summary' in k:
             htm += '''
     <meta property="og:description" content="{}">'''.format(k['summary_md'])
@@ -446,6 +447,7 @@ os.makedirs(admindir, exist_ok=True)
 # JUST DO THESE FROM SCRATCH
 #
 # - wait why again? not that big a deal but this list will grow big over time
+# A: BECAUSE I HAVENT IMPLEMENTED DELETING OUTDATED DIRECTORIES/FILES
 #if os.path.exists(tagdir):
 #    shutil.rmtree(tagdir)
 #if os.path.exists(tagwebdir):
