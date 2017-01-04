@@ -179,9 +179,9 @@ def head(k, depth=('../','../'), **kw):
     <meta property="article:author" content="http://jeffgerhard.com/">
     <meta property="article:published_time" content="{}">
 '''.format(k['title_md'], kanonical, k['yyyy-mm-dd'])
-    if 'Og-image' in k:
+    if 'og-image' in k:
         htm += '''    <meta property="og:image" content="{}">
-'''.format(k['Og-image'])
+'''.format(k['og-image'][0])
     scz = ['scripts']
     if 'scripts' in k:
         for s in k['scripts']:
@@ -440,10 +440,10 @@ os.makedirs(admindir, exist_ok=True)
 # - wait why again? not that big a deal but this list will grow big over time
 #if os.path.exists(tagdir):
 #    shutil.rmtree(tagdir)
-if os.path.exists(tagwebdir):
-    shutil.rmtree(tagwebdir)
+#if os.path.exists(tagwebdir):
+#    shutil.rmtree(tagwebdir)
 # os.makedirs(tagdir)
-os.makedirs(tagwebdir)
+os.makedirs(tagwebdir, exist_ok=True)
 #######################################################
 # OK IT'S TIME TO DO THIS
 #
@@ -540,7 +540,7 @@ for f in all_site_meta:
         fh.write(htm)
 
 ##########################################################
-# now the actual main page should be relatively easy (?)
+# now the actual main [blog] page should be relatively easy (?)
 #
 desc = ''
 if 'blogdescription' in admin:
@@ -625,7 +625,8 @@ def compare_spect(folders, path):
                     os.rename(spct, ind)
 #            else:  # no .spect file so delete this whole dir
 #                shutil.rmtree(os.path.join(wdir, s, sub))
-# **** ALERT: NEED TO COME BACK TO THIS!!!!! ****
+# **** ALERT: NEED TO COME BACK TO THIS!!!!! 
+#       ( DELETING FOLDERS THAT HAVE CHANGED!!!!                    ****
         elif os.path.exists(spct):
                 os.rename(spct, ind)
 wsecs = get_immediate_subdirectories(wdir)
