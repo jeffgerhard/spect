@@ -57,22 +57,22 @@ def buildHTML(k, depth=('../', '../')):
     htm += header()
     htm += '''
     <main class="container">
-        <article>
+        <article itemscope itemtype="https://schema.org/BlogPosting">
             <header class="row">
 '''
     if 'date' in k:
         htm += '                <p class="date">{} | '.format(k['text_date'])
-    htm += '<a href="{}{}/" class="category-name">{}</a></p>'.format(depth[0],k['section'], str(k['section']).upper())
+    htm += '<a href="{}{}/" class="category-name"><span itemprop="articleSection">{}</span></a></p>'.format(depth[0],k['section'], str(k['section']).upper())
     if 'title' in k:
         htm += '''
-                <h1>{}</h1>
+                <h1 itemprop="headline">{}</h1>
 '''.format(k['title_md'])
     if 'summary' in k:
-        htm += '''                <p class="summary">{}</p>
+        htm += '''                <p class="summary" itemprop="description">{}</p>
 '''.format(str(k['summary_md']))
     htm += '''            </header>
             <div class="row">
-            <div class="article-content eight columns">
+            <div class="article-content eight columns" itemprop="articleBody">
 
 '''
     gist = md.convert(k['text'])
@@ -87,12 +87,13 @@ def buildHTML(k, depth=('../', '../')):
             <footer class="four columns" id="post_details">
 '''
     if 'date' in k:
-        htm += '''                <p>Published <time datetime="{}">{}</time> in
+        htm += '''                <p>Published <time datetime="{}" itemprop="datePublished"
+            content="{}">{}</time> in
                 category <a class="category-name" href="{}{}/">{}</a>.
-'''.format(k['yyyy-mm-dd'], k['text_date'], depth[0], k['section'],
+'''.format(k['yyyy-mm-dd'], k['yyyy-mm-dd'], k['text_date'], depth[0], k['section'],
            k['section'])
     if 'tags' in k:
-        htm += '''                <em>Tagged as:</em> <span class="lynx">'''
+        htm += '''                <em>Tagged as:</em> <span class="lynx" itemprop="keywords">'''
         for tag in k['tags']:
             taglink = '/tags/' + slugify(tag)
             htm += '''
@@ -134,6 +135,12 @@ def buildHTML(k, depth=('../', '../')):
 '''.format(slugify(x[0]), x[0])
     htm += '''                <a href="/tags/">[see all tags&hellip;]</a></span></p>
 '''.format(depth[0])
+    htm += '''                <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+                <meta itemprop="name" content="Jeff Gerhard"></span>
+'''
+    if 'spumblr_key' in k:
+        htm += '''                <meta itemprop="headline" content="[untitled post, {}]"
+'''.format(k['text_date'])
     htm += '''            </footer>
             </div>
         </article>
@@ -166,7 +173,8 @@ def head(k, depth=('../','../'), **kw):
     if 'introspect' in k:
         kanonical = r'http://jeffgerhard.com/blog/' + k['slug'] + r'/'
         htm += '''
-    <link rel="canonical" href="{}">'''.format(kanonical)
+    <link rel="canonical" href="{}">
+    <meta itemprop="url" content="{}">'''.format(kanonical, kanonical)
         if 'summary' in k:
             htm += '''
     <meta property="og:description" content="{}">'''.format(k['summary_md'])
@@ -232,8 +240,8 @@ def footer(**kwargs):
     <footer id="bottombar">
         <div class="container">
             <p>Except as noted, all content here is by <a
-            href="/" rel="author">Jeff Gerhard</a>. @jeffgerhard. jeff 
-            [at] jeffgerhard.com</p>
+            href="/" rel="author">Jeff Gerhard</a>.
+            @jeffgerhard. jeff [at] jeffgerhard.com</p>
             <p>More info about this website <a href="/about/">here</a>.</p>
         </div>
     </footer>
@@ -407,7 +415,7 @@ def dictSort(y):
 # FOR RN I AM HARD CODING SOME ADDED STUFF TO INTEGRATE
 # THIS WITH MY SITE;
 # STARTING WITH EXTERNAL TAG JSON FILES!
-with open(r'C:\Users\J\Dropbox\__websites\jeffgerhard.com\archives\monodrone.org\monodrone_tagdict.json', 'r', encoding='utf-8') as fh:
+with open(os.path.join(j['localdir'], r'archives\monodrone.org\monodrone_tagdict.json'), 'r', encoding='utf-8') as fh:
     monodrone_tagdict = json.loads(fh.read())
 
     
