@@ -139,7 +139,7 @@ def buildHTML(k, depth=('../', '../')):
                 <meta itemprop="name" content="Jeff Gerhard"></span>
 '''
     if 'spumblr_key' in k:
-        htm += '''                <meta itemprop="headline" content="[untitled post, {}]"
+        htm += '''                <meta itemprop="headline" content="[untitled post, {}]">
 '''.format(k['text_date'])
     htm += '''            </footer>
             </div>
@@ -187,7 +187,7 @@ def head(k, depth=('../','../'), **kw):
     <meta name="twitter:creator" content="@JeffGerhard">
     <meta property="article:author" content="http://jeffgerhard.com/">
     <meta property="article:published_time" content="{}">
-'''.format(k['title_md'], kanonical, k['yyyy-mm-dd'])
+'''.format(k['title_md'], kanonical(k), k['yyyy-mm-dd'])
     if 'og-image' in k:
         htm += '''    <meta property="og:image" content="{}">
 '''.format(k['og-image'][0])
