@@ -191,6 +191,9 @@ def head(k, depth=('../','../'), **kw):
     if 'og-image' in k:
         htm += '''    <meta property="og:image" content="{}">
 '''.format(k['og-image'][0])
+    else:
+        htm += '''    <meta property="og:image" content="http://jeffgerhard.com/blog/images/me-square.png">
+'''  # maybe... let's see how it looks...
     scz = ['scripts']
     if 'scripts' in k:
         for s in k['scripts']:
@@ -280,7 +283,7 @@ def snipp(f, limit=1000):
         count += len(line)
         if count >= limit:
             snippet.append('')
-            snippet.append('**[ ... ]**')     
+            snippet.append('**[ ... ]**')
             break
     return True, '\n'.join(snippet)
 
