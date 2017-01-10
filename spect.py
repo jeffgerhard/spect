@@ -505,7 +505,8 @@ for s in secs:
 # UP TO SERVER, AND COMPARE ON REBUILD
 #############################################################
 # COOL! NOW WE'LL COMPILE TAG INFO
-
+# and series as well??
+seriesdict = dict()
 tagdict = {}  # there is probably a better way to do this, but i'm just
 #               reconstructing the site data to group by tag
 for s in secs:
@@ -518,6 +519,10 @@ for s in secs:
                 if tag not in tagdict:
                     tagdict[tag] = []
                 tagdict[tag].append(k)
+        if 'series' in k:
+            if k['series'][0] not in seriesdict:
+                seriesdict[k['series'][0]] = []
+            seriesdict[k['series'][0]].append(k)
 
 # let's also make the main category pages
 catpages = dict()  # basically the same technique as the tag pages...
