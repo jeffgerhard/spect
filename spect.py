@@ -77,9 +77,16 @@ def buildHTML(k, depth=('../', '../')):
 '''
     gist = md.convert(k['text'])
     g = gist.splitlines(keepends=True)
+    pre = False
     for a in g:
         if not a == '\n':
-            htm += '\t\t\t' + a
+            if a[0:5] == '<pre>':
+                pre = True
+            if not pre:
+                htm += '\t\t\t'
+            htm += a
+            if '</pre>' in a:
+                pre = False
     htm += '''
 
 
@@ -188,11 +195,11 @@ def head(k, depth=('../','../'), **kw):
     <meta property="article:author" content="http://jeffgerhard.com/">
     <meta property="article:published_time" content="{}">
 '''.format(k['title_md'], kanonical(k), k['yyyy-mm-dd'])
-    if 'og-image' in k:
-        htm += '''    <meta property="og:image" content="{}">
+        if 'og-image' in k:
+            htm += '''    <meta property="og:image" content="{}">
 '''.format(k['og-image'][0])
-    else:
-        htm += '''    <meta property="og:image" content="http://jeffgerhard.com/blog/images/me-square.png">
+        else:
+            htm += '''    <meta property="og:image" content="http://jeffgerhard.com/blog/images/me-square.png">
 '''  # maybe... let's see how it looks...
     scz = ['scripts']
     if 'scripts' in k:
