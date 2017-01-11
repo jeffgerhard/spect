@@ -221,7 +221,7 @@ def head(k, depth=('../','../'), **kw):
         htm += '''
     <link rel="stylesheet" href="{}styles/{}.css">'''.format(depth[1], st)
     htm += '''
-    <link rel="icon" type="image/x-icon" href="{}favicon.ico">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <meta name="generator" content="https://github.com/jeffgerhard/spect">
 </head>
 '''.format(depth[1])
