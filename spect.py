@@ -101,17 +101,19 @@ def buildHTML(k, depth=('../', '../')):
            k['section'])
     if 'tags' in k:
         htm += '''                <em>Tagged as:</em> <span class="lynx" itemprop="keywords">'''
-        for tag in k['tags']:
+        for idx, tag in enumerate(k['tags']):
             taglink = '/tags/' + slugify(tag)
             htm += '''
-                  <a href="{}/" class="taglink" rel="tag">{}</a> '''.format(taglink, tag)
+                  <a href="{}/" class="taglink" rel="tag">{}</a>'''.format(taglink, tag)
+            if idx != len(k['tags']) - 1:
+                htm += ', '
         htm += '</span>'
     htm += '''
                 </p>'''
     if 'twitter' in k:
         htm += '''
                 <p>If you would like to comment, please do so
-                over on Twitter, where this post was simulposted
+                over on Twitter, where this post was posted
                 <a href="{}">here</a>.</p>
 '''.format(k['twitter'][0])
     if len(catpages[k['section']])>1:
@@ -135,12 +137,14 @@ def buildHTML(k, depth=('../', '../')):
 '''
         htm += '                    </ul>'
     htm += '''
-                <p><em>Most frequent tags:</em> <span class="lynx">                         
-'''
-    for x in dictSort(tagdict)[0:3]:  # LATER I WILL UP THIS NUMBER WHEN I HAVE CONTENT!
-        htm += '''                <a href="/tags/{}/" rel="tag">{}</a>
-'''.format(slugify(x[0]), x[0])
-    htm += '''                <a href="/tags/">[see all tags&hellip;]</a></span></p>
+                <p><em>Most frequent tags:</em> <span class="lynx">'''
+    for idx, x in enumerate(dictSort(tagdict)[0:3]):  # LATER I WILL UP THIS NUMBER WHEN I HAVE CONTENT!
+        htm += '''
+                <a href="/tags/{}/" rel="tag">{}</a>'''.format(slugify(x[0]), x[0])
+        if idx != len(dictSort(tagdict)[0:3]) - 1:
+            htm += ', '
+    htm += '''
+                <a href="/tags/">[see all tags&hellip;]</a></span></p>
 '''.format(depth[0])
     htm += '''                <span itemprop="author" itemscope itemtype="http://schema.org/Person">
                 <meta itemprop="name" content="Jeff Gerhard"></span>
@@ -199,7 +203,7 @@ def head(k, depth=('../','../'), **kw):
             htm += '''    <meta property="og:image" content="{}">
 '''.format(k['og-image'][0])
         else:
-            htm += '''    <meta property="og:image" content="http://jeffgerhard.com/blog/images/me-square.png">
+            htm += '''    <meta property="og:image" content="http://jeffgerhard.com/blog/images/me-bw.png">
 '''  # maybe... let's see how it looks...
     scz = ['scripts']
     if 'scripts' in k:
