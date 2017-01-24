@@ -17,6 +17,7 @@ import filecmp
 import json
 from smartypants import smartypants as smp
 from spect_utils import get_immediate_subdirectories
+import sitemap
 
 
 def cleanDate2(x):
@@ -352,7 +353,7 @@ def buildResultsPage(f, l, result_type, desc, depth=('../','../')):
         htm += '''
         <article class="post_link">
             '''
-        if 'canonical' in line:
+        if line['source'] == 'ARCHIVES - monodrone.org':
             htm += '''<p class="date"><time datetime="{}">{}</time>{}</p>
             <h2><a href="{}">{}</a></h2>
 '''.format(line['yyyy-mm-dd'], line['text_date'], insec,
@@ -432,7 +433,6 @@ def dictSort(y):
 # STARTING WITH EXTERNAL TAG JSON FILES!
 with open(os.path.join(j['localdir'], r'archives\monodrone.org\monodrone_tagdict.json'), 'r', encoding='utf-8') as fh:
     monodrone_tagdict = json.loads(fh.read())
-
     
 #######################################################
 #
@@ -440,6 +440,7 @@ with open(os.path.join(j['localdir'], r'archives\monodrone.org\monodrone_tagdict
 #
 #
 md = m.Markdown(extensions=['meta', 'smarty'])
+sitemapxml = list()
 # think about how to make the local md files add to the extension list
 admindir, localdir, mddir, tagwebdir, wdir = [j.get(k) for k in ['admindir', 'localdir', 'mddir', 'tagwebdir', 'wdir']]
 #localdir = j['localdir']
@@ -513,6 +514,7 @@ for s in secs:
             if mk in k:
                 if len(k[mk]) == 1:
                     k[mk] = k[mk][0]
+        k['canonical'] = kanonical(k)
         all_site_meta.append(k)
 #print(json.dumps(all_site_meta, indent=2, sort_keys=True))
 # LATER I MIGHT WANT TO SAVE THIS IN AN ADMIN FOLDER, BACK IT
@@ -544,6 +546,7 @@ for s in secs:
     catpages[s] = []
     desc = ''
     catpages[s] += [l for l in all_site_meta if l['section'] == s]
+sitemapcats = list()
 for s in secs:
     if 'categories' in admin:
         for c in admin['categories']:
@@ -554,7 +557,12 @@ for s in secs:
     catpage = os.path.join(wdir, s, 'index.html')  # is there a reason not to make them as spect?
     with open(catpage, 'w') as fh:
         fh.write(chtmls)
-
+    if len(catpages[s]) > 0:
+        catdic = dict()
+        catdic['canonical'] = r'http://jeffgerhard.com/' + s + r'/'
+        catdic['yyyy-mm-dd'] = sorted(catpages[s], key=lambda y: y['yyyy-mm-dd'], reverse=True)[0]['yyyy-mm-dd']
+        sitemapcats.append(catdic)
+sitemapxml.append(sitemap.buildurls(sitemapcats, priority='0.4'))
 #################################################################
 # here is the main routine to build html files
 #################################################################
@@ -569,6 +577,11 @@ for f in all_site_meta:
         fh.write(htm)
 
 ##########################################################
+# TEST OF SITEMAPS A
+
+sitemapxml.append(sitemap.buildurls(all_site_meta, priority='0.7'))
+
+##########################################################
 # now the actual main [blog] page should be relatively easy (?)
 #
 desc = ''
@@ -578,6 +591,9 @@ frontpage = buildResultsPage(blogtitle, all_site_meta, 'in this blog', desc,
                              depth=('', '/blog/'))
 with open(os.path.join(wdir, 'index.html'), 'w') as fh:
     fh.write(frontpage)
+# LET ME SEE IF I CAN FIGURE OUT LATEST POST IN INTROSPECT
+blogdate = sorted(all_site_meta, key=lambda y: y['yyyy-mm-dd'], reverse=True)[0]['yyyy-mm-dd']
+sitemapxml.append(sitemap.addpage('http://jeffgerhard.com/blog/', blogdate, priority='0.9', changefreq='weekly'))
 
 ##########################################################
 # DO TAGS PAGES LAST
@@ -587,8 +603,10 @@ for t in tagdict:
     if t in monodrone_tagdict:
         tagdict[t] += monodrone_tagdict[t]
 mergedtags = {**monodrone_tagdict, **tagdict}
+sitemaptags = list()
 # then making .spect files for them [will transform these later to html]
 for t in mergedtags:
+    tagpagedict = dict()
     thtmlpath = os.path.join(tagwebdir, slugify(t))
     os.makedirs(thtmlpath, exist_ok=True)
     taghtmls = buildResultsPage(t, mergedtags[t], 'tagged with', '',
@@ -597,6 +615,11 @@ for t in mergedtags:
     tagfile = os.path.join(thtmlpath, 'index.spect')
     with open(tagfile, 'w', encoding='utf-8') as fh:
         fh.write(taghtmls)
+    tagpagedict['canonical'] = r'http://jeffgerhard.com/tags/' + slugify(t) + r'/'
+    tagpagedict['yyyy-mm-dd'] = sorted(mergedtags[t], key=lambda y: y['yyyy-mm-dd'], reverse=True)[0]['yyyy-mm-dd']
+    sitemaptags.append(tagpagedict)
+sitemapxml.append(sitemap.buildurls(sitemaptags, priority='0.3'))
+
 ##########################################################
 # howzabout doing a tag table for the tag main page?
 tagtable = '''
@@ -637,6 +660,18 @@ tablepage['slug'] = 'tags'
 thetags = buildPagePage(tablepage)
 with open(os.path.join(j['tagwebdir'], 'index.html'), 'w') as fh:
     fh.write(thetags)
+sitemapxml.append(sitemap.addpage(r'http://jeffgerhard.com/tags/', blogdate))
+
+with open(os.path.join(j['localdir'], r'archives\monodrone.org\monodrone_sitemap.xml'), 'r', encoding='utf-8') as fh:
+    sitemapxml.append(fh.read())
+# ADD SOME EXTRA PAGES UNTIL I DO A REGISTRY THING
+
+sitemapxml.append(sitemap.addpage(r'http://jeffgerhard.com/', blogdate, priority='0.9'))
+sitemapxml.append(sitemap.addpage(r'http://jeffgerhard.com/about/', blogdate, priority='0.8'))
+sitemapxml.append(sitemap.addpage(r'http://jeffgerhard.com/archives/', blogdate, priority='0.7'))
+# ASSEMBLE SITEMAP
+with open(os.path.join(j['localdir'], 'sitemap.xml'), 'w', encoding='utf-8') as fh:
+    fh.write(sitemap.finish(sitemapxml))
 
 ##########################################################
 # then i want to run thru and compare 'n' delete files
