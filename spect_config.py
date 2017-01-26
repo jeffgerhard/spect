@@ -120,6 +120,11 @@ def rebuildConfig(j):
             j['winscp'] = askopenfilename(title=filelib['winscp'])
     else:
         j['winscp'] = askopenfilename(title=filelib['winscp'])
+    if 'pngquant' in j:
+        if input('Change location of pngquant.exe from {} (y/n)'.format(j['pngquant'])).lower() == "y":
+            j['pngquant'] = askopenfilename(title=filelib['pngquant'])
+    else:
+        j['pngquant'] = askopenfilename(title=filelib['pngquant'])
     if kr:
         pw = keyring.get_password('spect', j['username'])
         if input('Change password from {}? (y/n) '.format(pw)).lower() == "y":
@@ -138,7 +143,7 @@ def rebuildConfig(j):
 userDir = os.path.expanduser('~')
 spectDir = os.path.join(userDir, '.spect')
 config = os.path.join(spectDir, 'config.ini')
-version = '0.4' # 11/29/2016 -- modifying tag dir
+version = '0.5' # 1/26/2017 -- adding path to pngquant
 varlib = {'blogtitle': "ok so what is your blog's name? ",
            'site': 'web host site (e.g., example.com)? ',
            'sitefolder': 'folder on server to use (e.g., "public_html/site") ?',
@@ -148,7 +153,8 @@ varlib = {'blogtitle': "ok so what is your blog's name? ",
             'blogdescription': 'give a description for this blog '}
 folderlib = {'localdir': '''Choose a local directory, like "website", that has
 the "md" directory inside it:'''}
-filelib = {'winscp': 'find the winscp.com file! ' }
+filelib = {'winscp': 'find the winscp.com file! ',
+           'pngquant': 'find the path to the pngquant.exe file '}
 site_vars = ['mddir', 'wdir', 'admindir', 'tagwebdir']
 
 if not checkConfigFile():
@@ -157,20 +163,7 @@ if not checkConfigFile():
 first we'll set up some variables, then we need to locate some specific files and directories.
 
 ''')
-#    site = input('web host site? (like example.com) ')
-#    sitefolder = input('folder on site to use? (e.g. "public_html/site") ')
-#    username = input('remote host username? ')
-#    password = input('remote host password? ')
-#    hostkeys = input('scary hostkeys string that you barely understand? ')
-#    winscp = askopenfilename(title='find the winscp.com file! ')
-#    localdir = askdirectory(title=
-#    'Choose a local directory, like "website", that has the "md" directory inside '
-#    )
     j = rebuildConfig(configurations)
-
-#    for i in ('site', 'hostkeys', 'username',
-#              'sitefolder', 'localdir', 'winscp', 'version'):
-#        configurations[i] = locals()[i]
 
     with open(config, 'w', encoding='utf-8') as fh:
         fh.write(json.dumps(j, indent=4, sort_keys=True))
@@ -182,7 +175,6 @@ password = keyring.get_password('spect', j['username'])
 admindir = os.path.join(j['localdir'], 'blog', 'admin')
 if __name__ == "__main__":
     if input('set up configuration? (y/n) ').lower() == 'y':
-            #redo configuration stuff
         j = rebuildConfig(j)
         j['version'] = version
         with open(config, 'w', encoding='utf-8') as fh:
