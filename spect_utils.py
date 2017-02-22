@@ -36,7 +36,7 @@ def derive_images(filename):
     derives = []
     undersize = []
     with tempfile.TemporaryDirectory() as tmpdir:
-        for w in [1280, 500, 400, 250, 100]:  # these are the tumblr sizes (minus a 75sq thumbnail)
+        for w in [1280, 620, 500, 400, 250]:  # these are the tumblr sizes (minus a 75sq thumbnail)
             name = os.path.basename(filename)
             name = splitext(name)[0] + '_' + str(w) + splitext(name)[1]
             if imgwidth(filename, w, os.path.join(tmpdir, name)):
@@ -65,6 +65,8 @@ def derive_images(filename):
 
 
 def generate_img_html(filename, caption=''):
+    # this is really only useful for large images, certainly over 600px wide
+# so it would be good to check that first
     large = False
     ogimage = ''
     derives, undersize = derive_images(filename)
@@ -74,7 +76,7 @@ def generate_img_html(filename, caption=''):
     mdtxt = '\n<figure>'
     if large:
         mdtxt += '\n   <a href="/images/spect/{}" title="click-through for full-size image">'.format(os.path.basename(filename))
-    mdtxt += '\n   <img src="/images/spect/{}"'.format(os.path.basename(filename))
+    mdtxt += '\n   <img src="/images/spect/alt/{}"'.format(os.path.basename(derives[0]))
     if caption != '':
         mdtxt += '\n        alt="{}"'.format(caption)
     if len(derives) > 0:
@@ -92,7 +94,7 @@ def generate_img_html(filename, caption=''):
             if idx == 0:
                 ogimage = r'http://jeffgerhard.com/spect/alt/' + d
         mdtxt += '"'
-        mdtxt += '\n        sizes="(min-width: 800px) 50vw, 100vw"'
+        mdtxt += '\n        sizes="(max-width: 549px) 100vw, (max-width: 1250px) 620px, 620px"'
 # sizes tip via https://css-tricks.com/responsive-images-youre-just-changing-resolutions-use-srcset/
     mdtxt += '>'
     if large:

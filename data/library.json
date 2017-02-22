@@ -1,0 +1,108 @@
+{
+    "sitevars_build": [
+        {
+            "name": "blog_title",
+			"type": "string",
+			"required": true,
+            "description": "What is the name of the blog?"
+        },
+        {
+            "name": "blog_description",
+			"type": "string",
+			"required": true,
+            "description": "Enter a description for your blog (this will show up on the main blog page and maybe elsewhere):"
+        },
+        {
+            "name": "has_categories",
+			"type": "boolean",
+			"required": true,
+			"default_value": true,
+            "description": "The SPECT system generally keeps its blog posts in categories. Allow categories? (Y/N)"
+        },
+        {
+            "name": "categories",
+			"type": "list",
+			"required": false,
+			"depends_on": "has_categories",
+            "description": "Add a category:"
+        },
+        {
+            "name": "category_descriptions",
+			"type": "dictionary",
+			"required": false,
+			"depends_on": "has_categories",
+			"based_on": "categories",
+            "description": "Give a description:"
+        },
+        {
+            "name": "base_uri",
+			"type": "string",
+			"required": true,
+            "description": "What is the base URI for the website you are using? E.g., example.com or www.example.org. (Remember you can change this later.)"
+        },
+        {
+            "name": "remote_blog_directory",
+			"type": "string",
+			"required": true,
+            "description": "SPECT currently requires a blog directory on the server. What shall we name it? (Hint: just type in 'blog'.)"
+        },
+        {
+            "name": "author_name",
+			"type": "string",
+			"required": true,
+            "description": "Give the name of the primary author:"
+        }
+    ],
+	"sitevars_version": "1",
+	"config_version": "0.6",
+	"config_build": [
+		{
+			"name": "site",
+			"type": "string",
+			"required": true,
+			"description": "What is the web host name that you will log in to for uploading to your site? (This isn't necessarily the same as the base URL that visitors will access.)"
+		},
+		{
+			"name": "sitefolder",
+			"type": "string",
+			"required": true,
+			"description": "Folder on the remote site to use? (e.g., 'public_html/site')"
+		},
+		{
+			"name": "username",
+			"type": "string",
+			"required": true,
+			"description": "Remote host username:"
+		},
+		{
+			"name": "password",
+			"type": "string",
+			"required": true,
+			"description": "Remote host password:"
+		},
+		{
+			"name": "hostkeys",
+			"type": "string",
+			"required": true,
+			"description": "Paste the scary hotkeys string from winscp:"
+		},
+		{
+			"name": "localdir",
+			"type": "folder",
+			"required": true,
+			"description": "Choose a local directory, like 'website', that has the 'md' directory inside it:"
+		},
+		{
+			"name": "winscp",
+			"type": "file",
+			"required": true,
+			"description": "Find the winscp.com file (not the 'exe' file!)"
+		},
+		{
+			"name": "pngquant",
+			"type": "file",
+			"required": true,
+			"description": "Find the path to the pngquant.exe file"
+		}
+	]
+}

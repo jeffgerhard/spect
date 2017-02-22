@@ -12,7 +12,6 @@ import os
 from slugify import slugify
 from dateutil.parser import parse
 from spect_config import j, admin  # may move this around a bit soon
-import shutil
 import filecmp
 import json
 from smartypants import smartypants as smp
@@ -191,11 +190,23 @@ def head(k, depth=('../','../'), **kw):
         if 'summary' in k:
             htm += '''
     <meta property="og:description" content="{}">'''.format(k['summary_md'])
+        else:
+            summary = 'A'
+            if k['section'][0].lower() in ['a','e','i','o','u']:
+                summary += 'n'
+            summary += ' ' + k['section'] + ' post.'
+            htm += '''
+    <meta property="og:description" content="{}">'''.format(summary)
+        if k['section'] == 'ephemeral':
+            htm += '''
+    <meta name="twitter:card" content="summary_large_image">'''
+        else:
+            htm += '''
+    <meta name="twitter:card" content="summary">'''
         htm += '''
     <meta property="og:title" content="{}">
     <meta property="og:url" content="{}">
     <meta property="og:site_name" content="Introspect">
-    <meta name="twitter:card" content="summary">
     <meta name="twitter:creator" content="@JeffGerhard">
     <meta property="article:author" content="http://jeffgerhard.com/">
     <meta property="article:published_time" content="{}">
@@ -701,6 +712,34 @@ for s in wsecs:
     
 wsecs = get_immediate_subdirectories(tagwebdir)
 compare_spect(wsecs, tagwebdir)
+
+# generate some stuff for the front page index
+htm = ''
+for line in sorted(all_site_meta, key=lambda k: k['yyyy-mm-dd'], reverse=True):
+    insec = ' in category <a class="category-name" href="{}{}/">{}</a>'.format('/blog/', slugify(line['section']), line['section'])
+    htm += '''
+        <article class="post_link">
+            '''
+    if line['source'] == 'ARCHIVES - monodrone.org':
+        htm += '''<p class="date"><time datetime="{}">{}</time>{}</p>
+            <h3><a href="{}">{}</a></h3>
+'''.format(line['yyyy-mm-dd'], line['text_date'], insec,
+       line['canonical'], line['title'])
+    elif 'title' in line:
+        htm += '''<p class="date"><time datetime="{}">{}</time>{}</p>
+        <h2><a href="{}{}/">{}</a></h2>
+'''.format(line['yyyy-mm-dd'], line['text_date'], insec, '/blog/',
+       line['slug'], line['title_md'])
+    else:
+        htm += '''
+                <p class="date"><a href="{}{}/" title="permalink">{}</a>{}</p>
+'''.format('/blog/', line['slug'], line['text_date'], insec)
+    if 'summary' in line:
+        htm += '''
+            <p class="summary">{}</p>'''.format(line['summary_md'])
+    htm += '</article>'
+print(htm)
+
 
 #    for sub in subsecs:
 #        ind = os.path.join(wdir, s, sub, 'index.html')

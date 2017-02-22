@@ -1,0 +1,54 @@
+code restructure plan for spect system:
+
+sitevars
+sitevars are global information pieces and should be synched via the
+server if possible...
+
+old admin had blogdescription, blogtitle, categories
+but should add things like:
+- category descriptions
+- site base uri
+- names of things like 'blog' folder
+- site structure setup (later on?)
+- default author name
+- maybe default templates???? (much later)
+- opengraph options
+- css options
+
+the sitevars should be hand-editable so possibly in .ini format instead of
+json. but have to include verification and check vs online thing regularly.
+(down the line someday it would not be too hard to compare local and remote
+copies variable by variable and clean up/force a user to make decisions)
+
+would be nice to generate a default version for hand-editing if none exists
+
+-config [local system info]
+-library [data like strings, etc]
+-utils [general tools]
+-spectml [html tools]
+-spect [updates everything; generates files] --> note that i need some ways to run this for debug purposes so i don't keep regenerating everything while experimenting with code
+-remotetils [uploads and downloads]
+-imgutils
+-videoutils?
+-newpost [creates a markdown; optionally builds the thing entire like for tumblr-style posts]
+-admin [run various administrative tasks]
+-template building?
+
+-sitemap
+-rss
+-json
+
+separate(?) module for css work? would like to at least automate sassc part; can also minify easily i imagine
+
+THINK ABOUT CLASSES; LIKE FOR ALL THESE VARIOUS DICTIONARIES  // DRY
+
+like a Spect() class
+spectposts = Spect()
+spectposts.tags could be return the function of the tags
+spectposts.catsdict()
+spectposts.name could be 'Spect'
+monodroneposts.name could be 'ARCHIVE of monodrone.org'
+monodroneposts.type could be 'archive'
+tumbrlposts.tags
+spectposts.update()
+spectposts.
