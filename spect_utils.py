@@ -92,7 +92,7 @@ def generate_img_html(filename, caption=''):
             if idx < len(derives)-1:
                 mdtxt += ','
             if idx == 0:
-                ogimage = r'http://jeffgerhard.com/spect/alt/' + d
+                ogimage = r'http://jeffgerhard.com/images/spect/alt/' + d
         mdtxt += '"'
         mdtxt += '\n        sizes="(max-width: 549px) 100vw, (max-width: 1250px) 620px, 620px"'
 # sizes tip via https://css-tricks.com/responsive-images-youre-just-changing-resolutions-use-srcset/
@@ -113,7 +113,7 @@ def rename(x, assume=False):
     newname = input('give this image a name! ')
     print('Ok. If {} is cool just hit enter'.format(newname))
     if input('but hit [C] to edit').lower() == 'c':
-        rename(newname, assume=True)
+        return rename(newname, assume=True)
     return newname
 
 userDir = os.path.expanduser('~')
@@ -157,7 +157,7 @@ if __name__ == "__main__":
                 copiedfile += splitext(os.path.basename(image))[1].lower()
             elif query == 'q':
                 raise ValueError('Program halted -- check filenames!')
-# THIS IS RUDAMENTARY -- NEED TO UPDATE IT LATER TO KEEP CHECKING
+# THIS IS RUDIMENTARY -- NEED TO UPDATE IT LATER TO KEEP CHECKING
         copyfile(image, copiedfile)
         image = copiedfile
     caption = input('Enter a caption (optionally): ')

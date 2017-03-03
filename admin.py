@@ -3,7 +3,7 @@
 all admin data:
 
 return the data library as library class; the config data as config dictionary; 
-and the sitevars data as sitevars dictionary; password as string; dirs as class
+the sitevars data as sitevars dictionary; password as string; dirs as class
 
 these have different features
 
@@ -26,7 +26,7 @@ import keyring
 #    print('keyring not installed; password will be stored in plaintext.')
 #    kr = False
 from subprocess import Popen, PIPE
-import urllib
+#import urllib
 from dateutil.parser import parse
 import datetime
 
@@ -134,19 +134,21 @@ maybe edit the source code. (try around line 90 of the admin.py file''')
         print('one or both files missing')
     return result
 
+
 def checksv(a):
     os.makedirs(a, exist_ok=True)
     result = False
     if os.path.isfile(svfile(a)):
         return True
     return result
-    
+
+
 def checkremote(config, password):
     status, filesize, filedate = checkRemoteFile(config, password,
-                             config['sitefolder'] + '/admin/sitevars.json')
+                                                 config['sitefolder'] + '/admin/sitevars.json')
 #    print('status', status)
     return status, filesize, filedate
-    # COME BACK ONCE I ADD THIS FEATURE
+
 
 def buildsvs(svdir):
     print('Hello. I notice that you haven\'t set up the site variables\n'
@@ -175,7 +177,8 @@ def buildsvs(svdir):
                     else:
                         sitevars[sv['name']] = askforvar(sv['description'], sv['name'], sv['type'])
     return sitevars
-    
+
+
 def askforvar(x, y, vtype='string'):
     def var_query(x, y):
         res = input(x + ' ')
@@ -217,6 +220,7 @@ def returnsitevars(d):
         _ = fh.read()
         return json.loads(_)
 
+
 def checkConfigFile():
     '''s for spectdir, c for configfile location. returns True/False'''
     exists = False
@@ -226,15 +230,15 @@ def checkConfigFile():
     if not os.path.exists(configdir):
         os.makedirs(configdir)
     if os.path.isfile(configfileloc):
-        exists = True 
+        exists = True
     return exists, configfileloc
+
 
 def rebuildConfig(config, phrase, library):
     print(phrase)
     for _ in library.config_build:
         if _['name'] in config:
             config[_['name']] = config_entry(_, config[_['name']], _['name'] in config)
-    keyring.set_password('spect', config['username'], password)
     pw = keyring.get_password('spect', config['username'])
     if input('Change password from {}? (y/n) '.format(pw)).lower() == "y":
         newpw = input('New password: ')
@@ -254,11 +258,12 @@ def rebuildConfig(config, phrase, library):
     print(config)
     return config
 
+
 def config_entry(_, name, exists):
     print('\n\n{:-^30}\n'.format(' ' + _['name'] + ' '))
     if exists:
         question = input('Change {} from "{}" (y/n)? '.format(_['name'], name))
-    if exists == False or question == "y":
+    if exists is False or question == "y":
         if _['type'] == 'string':
             return input(_['description'] + ' ')
         elif _['type'] == 'folder':
@@ -273,6 +278,7 @@ def config_entry(_, name, exists):
 ###########################################################################
 # REMOTE UPLOAD/DOWNLOAD/CHECK THE SERVER TOOLS
 ###########################################################################
+
 def remotecommit(cmds, WINSCP, exit=True):
     if exit:
         cmds.append('exit\n')
@@ -282,14 +288,17 @@ def remotecommit(cmds, WINSCP, exit=True):
 #        print(stdout)
     return winscp.returncode, stdout
 
+
 def remotestring(config, pwd):
     cmds = []
     cmds.append('open sftp://{user}:{passwd}@{host}/ -hostkey="{hkeys}"'.format(
-    host=config['site'],
-    user=config['username'],
-    passwd=pwd,
-    hkeys=config['hostkeys']))
+                host=config['site'],
+                user=config['username'],
+                passwd=pwd,
+                hkeys=config['hostkeys']
+                ))
     return cmds
+
 
 def checkRemoteFile(config, pwd, file):
     cmds = remotestring(config, pwd)
@@ -308,8 +317,9 @@ def checkRemoteFile(config, pwd, file):
     else:
         return False, None, None
 
+
 def uploadFile(config, pwd, file, remotedir, confirm=True):
-#    print(file, remotedir)
+    #  print(file, remotedir)
     cmds = remotestring(config, pwd)
     if confirm == False:
         cmds.append('option confirm off')
@@ -318,13 +328,14 @@ def uploadFile(config, pwd, file, remotedir, confirm=True):
     if returncode == '0':
         return True
     else:
-        return False    
+        return False
+
 
 def downloadFile(config, pwd, remotefile, localdir, confirm=True):
     cmds = remotestring(config, pwd)
-    if confirm == False:
+    if confirm is False:
         cmds.append('option confirm off')
-    cmds.append('get ' + remotefile +  ' ' + localdir)
+    cmds.append('get ' + remotefile + ' ' + localdir)
     returncode, output = remotecommit(cmds, config['winscp'])
     if returncode == '0':
         print('file downloaded successfully.')
@@ -335,7 +346,7 @@ def downloadFile(config, pwd, remotefile, localdir, confirm=True):
 # LIBRARY
 
 _ = os.path.dirname(__file__)
-with open(os.path.join(_,'data/library.json'), 'r', encoding='utf-8') as fh:
+with open(os.path.join(_, 'data/library.json'), 'r', encoding='utf-8') as fh:
     library = utils.Dict2Obj(json.loads(fh.read()))
 
 # CONFIG FILE
@@ -355,11 +366,15 @@ def configure():
         else:
             print('Ending this charade, then.')
             return
-    if not 'version' in config:
-        config = rebuildConfig(config, 'No version found! Rebuilding config...\n\n', library)
+    if 'version' not in config:
+        config = rebuildConfig(config,
+                               'No version found! Rebuilding config...\n\n',
+                               library)
         utils.savejson(config, configfileloc)
     elif not config['version'] == library.config_version:
-        config = rebuildConfig(config, "\n\nConfiguration version is out of date. Let's rebuild.\n\n", library)
+        config = rebuildConfig(config,
+                               "\n\nConfiguration version is out of date. Let's rebuild.\n\n",
+                               library)
         utils.savejson(config, configfileloc)
     return config, password
 
@@ -381,7 +396,7 @@ config, password = configure()
 dirs = build_dirs(config['localdir'])
 
 # SITEVARS
-    
+
 if runsvchecks(dirs.admindir, config, password, library):
     print('config is good')
     sitevars = returnsitevars(dirs.admindir)

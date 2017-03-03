@@ -15,13 +15,17 @@ development phase 1: just generate some html files in a directory structure of i
 ### last steps left to complete in phase 1:
 - remove my personal site-specific stuff (mostly done but not 100%)
 - short-term hook to call external tag libraries
-- look into making snippets expand into full text / keep this accessible tho
+- fix snippets in general; look into making snippets expand into full text / keep this accessible tho
 - split out stylesheets (external to spect, really), make diff. categories diff. colors?
 - __clean up code__ for redundancy / pythonicness / modularity / theoretically usable by other people
 - clean up variable names; look at python best practices
 - generate blank index.html files for any exposed folders (admin, scripts, styles)
 - reassess deleting outdated directories!
 - use tempfile for .spect files (i'm running on a dropbox folder and dbx is occasionally interfering)
+- ARIA tags and accessbility assessment
+- work on "front page" of website / possibly include images for recent posts if applicable; also
+  probably I will want to makes some entries 'featured' and some never display on the front page. so
+  like, "featured: featured" or "featured: never" could be entry options.
 
 ## PHASE 2
 - start tracking versions and start figuring out git amend commands :)
@@ -32,7 +36,6 @@ development phase 1: just generate some html files in a directory structure of i
 - also, work on 'date modified' type of metadata in case of revisions
 - and using full datestamps when applicable [imported data already has it]
 - begin to figure out how to modularize external sections of the site, e.g., archives
-- work on "front page" of website
 - reassess google web fonts (though ultimately this design level stuff will not be part of spect)
 - registry of all pages and sections that are not in blog so that i can update them en masse
 - more head metadata / opengraph stuff maybe __[partly complete]__
